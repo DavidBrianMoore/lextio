@@ -172,25 +172,19 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUrlLoad = async () => {
-    const url = prompt('Enter document URL (PDF, EPUB, DOCX):');
-    if (!url) return;
-    
+  const processUrl = async (url: string) => {
     setIsParsing(true);
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch document.');
       const blob = await response.blob();
       
-      // Determine file name from URL
       let name = url.split('/').pop()?.split('?')[0] || 'remote-document.epub';
       if (!name.includes('.')) name += '.epub';
       setFileName(name);
 
       let text = '';
       const lowerName = name.toLowerCase();
-      
-      // Create a File-like object from blob for compatibility
       const file = new File([blob], name, { type: blob.type });
 
       if (lowerName.endsWith('.pdf')) text = await parsePDF(file);
@@ -201,14 +195,7 @@ const App: React.FC = () => {
       
       setContent(text);
       setActiveSentenceIndex(-1);
-      
-      const entry: LibraryEntry = { 
-        id: Math.random().toString(36).slice(2), 
-        title: name, 
-        content: text, 
-        timestamp: Date.now() 
-      };
-      
+      const entry: LibraryEntry = { id: Math.random().toString(36).slice(2), title: name, content: text, timestamp: Date.now() };
       setLibrary(prev => {
         const updated = [entry, ...prev.filter(i => i.title !== name)].slice(0, 20);
         localStorage.setItem('voice-reader-library', JSON.stringify(updated));
@@ -218,6 +205,38 @@ const App: React.FC = () => {
       alert(err instanceof Error ? err.message : 'Failed to load from URL.');
     } finally {
       setIsParsing(false);
+    }
+  };
+
+  const handleUrlLoad = async () => {
+    const url = prompt('Enter document URL (PDF, EPUB, DOCX):');
+    if (url) processUrl(url);
+  };
+
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+    if (url && (url.startsWith('http') || url.startsWith('https'))) {
+      processUrl(url);
+      return;
+    }
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileUpload({ target: { files: [file] } } as any);
     }
   };
 
@@ -281,7 +300,26 @@ const App: React.FC = () => {
   const isBookmarked = currentBook?.bookmarks?.some(b => b.index === activeSentenceIndex) || false;
 
   return (
-    <div className={`app-root${focusMode ? ' focus-mode' : ''}`}>
+    <div 
+      className={`app-root${focusMode ? ' focus-mode' : ''}${isDragging ? ' dragging' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="drop-zone"
+          >
+            <div className="drop-zone-content">
+              <Globe size={48} />
+              <p>Drop to Import Narrative</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="orb orb-1" />
       <div className="orb orb-2" />
 
