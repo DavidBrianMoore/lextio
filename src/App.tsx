@@ -277,7 +277,6 @@ const App: React.FC = () => {
               sentences={sentences}
               activeSentenceIndex={activeSentenceIndex}
               onSentenceClick={playFromIndex}
-              isPlaying={isPlaying}
               scrollMode={scrollMode}
             />
           </div>

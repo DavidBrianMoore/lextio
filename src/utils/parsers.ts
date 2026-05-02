@@ -10,8 +10,7 @@ export const parsePDF = async (file: File): Promise<string> => {
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ 
       data: arrayBuffer,
-      useSystemFonts: true,
-      isEvalSupported: false
+      useSystemFonts: true
     });
     
     const pdf = await loadingTask.promise;

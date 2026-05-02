@@ -50,8 +50,8 @@ export function predictBlockHeight(
 export function renderBlock(
   block: ContentBlock,
   el: HTMLElement,
-  columnWidth: number,
-  settings: ReaderSettings,
+  _columnWidth: number,
+  _settings: ReaderSettings,
   annotations: Annotation[] = []
 ): number {
   el.innerHTML = '';

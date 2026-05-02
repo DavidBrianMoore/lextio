@@ -4,7 +4,6 @@ interface PretextReaderProps {
   sentences: string[];
   activeSentenceIndex: number;
   onSentenceClick: (index: number) => void;
-  isPlaying: boolean;
   scrollMode?: 'center' | 'natural';
 }
 
@@ -12,7 +11,6 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
   sentences,
   activeSentenceIndex,
   onSentenceClick,
-  isPlaying,
   scrollMode = 'center',
 }) => {
   const activeRef = useRef<HTMLDivElement>(null);

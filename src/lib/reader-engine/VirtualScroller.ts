@@ -1,6 +1,6 @@
 import { type ContentBlock, type Annotation } from './types';
-import { type ReaderSettings, THEMES } from './theme';
-import { predictBlockHeight, renderBlock, clearPreparedCache } from './ParagraphRenderer';
+import { type ReaderSettings } from './theme';
+import { predictBlockHeight, renderBlock } from './ParagraphRenderer';
 
 interface BlockEntry {
   block: ContentBlock;
