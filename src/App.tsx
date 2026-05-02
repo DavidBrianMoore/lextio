@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, ChevronRight, RotateCcw, FastForward, Bookmark } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, ChevronRight, RotateCcw, FastForward, Bookmark, Globe } from 'lucide-react';
 import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -172,6 +172,55 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUrlLoad = async () => {
+    const url = prompt('Enter document URL (PDF, EPUB, DOCX):');
+    if (!url) return;
+    
+    setIsParsing(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch document.');
+      const blob = await response.blob();
+      
+      // Determine file name from URL
+      let name = url.split('/').pop()?.split('?')[0] || 'remote-document.epub';
+      if (!name.includes('.')) name += '.epub';
+      setFileName(name);
+
+      let text = '';
+      const lowerName = name.toLowerCase();
+      
+      // Create a File-like object from blob for compatibility
+      const file = new File([blob], name, { type: blob.type });
+
+      if (lowerName.endsWith('.pdf')) text = await parsePDF(file);
+      else if (lowerName.endsWith('.docx')) text = await parseDOCX(file);
+      else if (lowerName.endsWith('.epub')) text = await parseEPUB(file);
+      
+      if (!text) throw new Error('No readable content found.');
+      
+      setContent(text);
+      setActiveSentenceIndex(-1);
+      
+      const entry: LibraryEntry = { 
+        id: Math.random().toString(36).slice(2), 
+        title: name, 
+        content: text, 
+        timestamp: Date.now() 
+      };
+      
+      setLibrary(prev => {
+        const updated = [entry, ...prev.filter(i => i.title !== name)].slice(0, 20);
+        localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+        return updated;
+      });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to load from URL.');
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
   const playFromIndex = useCallback((index: number) => {
     if (index >= sentences.length) { stop(); return; }
     setActiveSentenceIndex(index);
@@ -256,6 +305,9 @@ const App: React.FC = () => {
           <button className="nav-btn" onClick={() => setShowLibrary(true)}>
             <Library size={16} />
             <span className="nav-btn-label">Library</span>
+          </button>
+          <button className="nav-btn" onClick={handleUrlLoad} title="Load from URL">
+            <Globe size={16} />
           </button>
           <input type="file" id="file-upload" style={{ display: 'none' }} accept=".pdf,.docx,.epub" onChange={handleFileUpload} />
           <label htmlFor="file-upload" className="nav-upload-label">
