@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, ChevronRight, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, MoreVertical, Folder as FolderIcon, Trash2, FolderOpen } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2 } from 'lucide-react';
 import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
