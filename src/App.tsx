@@ -122,6 +122,16 @@ const App: React.FC = () => {
     }
   };
 
+  const goHome = () => {
+    setContent('');
+    setFileName('');
+    setActiveSentenceIndex(-1);
+    stop(); // Ensure speech stops
+    setShowLibrary(false);
+    setShowSettings(false);
+    setFocusMode(false);
+  };
+
   const handleResize = useCallback((e: MouseEvent) => {
     const newWidth = window.innerWidth - e.clientX;
     if (newWidth > 300 && newWidth < 1200) {
@@ -654,7 +664,7 @@ const App: React.FC = () => {
 
       {/* ── Navigation ── */}
       <nav className="app-nav">
-        <div className="nav-logo">
+        <div className="nav-logo" onClick={goHome} style={{ cursor: 'pointer' }} title="Go to Home">
           <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
           <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
           <div className="nav-logo-bar" style={{ height: 26 }} />
