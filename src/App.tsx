@@ -131,7 +131,7 @@ const App: React.FC = () => {
 
   const {
     isPlaying, rate, setRate,
-    maxRateWarning, speak, pause, stop, preview, refreshVoices,
+    speak, pause, stop, preview, refreshVoices,
     selectedVoice, setSelectedVoice, voices,
   } = useVoice();
 
@@ -875,16 +875,16 @@ const App: React.FC = () => {
 
         {/* Notification Toast */}
         <AnimatePresence>
-          {(maxRateWarning || notification) && (
+          {notification && (
             <motion.div
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-              className={`rate-warning-toast ${notification?.type || ''}`}
+              className={`rate-warning-toast ${notification.type}`}
               style={{ 
-                background: notification?.type === 'error' ? 'rgba(255, 82, 82, 0.9)' : 
-                            notification?.type === 'success' ? 'rgba(76, 175, 80, 0.9)' : undefined 
+                background: notification.type === 'error' ? 'rgba(255, 82, 82, 0.9)' : 
+                            notification.type === 'success' ? 'rgba(76, 175, 80, 0.9)' : undefined 
               }}
             >
-              {notification?.message || maxRateWarning}
+              {notification.message}
             </motion.div>
           )}
         </AnimatePresence>

@@ -20,7 +20,6 @@ export const useVoice = () => {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [rate, setRate] = useState(1);
-  const [maxRateWarning, setMaxRateWarning] = useState<string | null>(null);
   const [currentTextIndex, setCurrentTextIndex] = useState(-1);
   
   const synth = window.speechSynthesis;
@@ -119,19 +118,7 @@ export const useVoice = () => {
     }
   }, [voices]);
 
-  // Check for maxRate violations
-  useEffect(() => {
-    if (selectedVoice) {
-      const currentVoiceInfo = voices.find(v => v.voice.name === selectedVoice.name);
-      if (currentVoiceInfo && rate > currentVoiceInfo.maxRate) {
-        setMaxRateWarning(`Warning: ${selectedVoice.name} typically supports up to ${currentVoiceInfo.maxRate}x speed.`);
-        const timer = setTimeout(() => setMaxRateWarning(null), 4000);
-        return () => clearTimeout(timer);
-      } else {
-        setMaxRateWarning(null);
-      }
-    }
-  }, [rate, selectedVoice, voices]);
+
 
   const stop = useCallback(() => {
     isManualStop.current = true;
@@ -232,7 +219,6 @@ export const useVoice = () => {
     setIsPlaying,
     rate,
     setRate,
-    maxRateWarning,
     speak,
     pause,
     resume,
