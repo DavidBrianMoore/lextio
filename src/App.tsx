@@ -246,7 +246,8 @@ const App: React.FC = () => {
         });
       } catch (err) {
         console.error(`Failed to parse ${file.name}:`, err);
-        setNotification({ message: `Failed to import "${file.name}"`, type: 'error' });
+        const errMsg = err instanceof Error ? err.message : 'Unknown error';
+        setNotification({ message: `Failed to import "${file.name}": ${errMsg}`, type: 'error' });
       } finally {
         setParsingCount(prev => Math.max(0, prev - 1));
       }
