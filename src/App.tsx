@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2, LayoutGrid, List, Minimize2, Plus, AlignJustify, CheckSquare, Square } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2, LayoutGrid, List, Minimize2, Plus, AlignJustify, CheckSquare, Square, X } from 'lucide-react';
 import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -829,7 +829,7 @@ const App: React.FC = () => {
                       className={`select-all-btn ${selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? 'active' : ''}`}
                       onClick={selectAll}
                       title="Select All"
-                      style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}
                     >
                       {selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? <CheckSquare size={12} /> : <Square size={12} />}
                       Select All
@@ -881,8 +881,8 @@ const App: React.FC = () => {
                       {isLibraryFull ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                     </button>
                     <div className="v-divider" />
-                    <button className="create-folder-btn" onClick={createFolder} title="New Folder">
-                      <FolderPlus size={18} />
+                    <button className="control-icon-btn" onClick={() => setShowLibrary(false)} title="Close Library">
+                      <X size={18} />
                     </button>
                   </div>
                 </div>
