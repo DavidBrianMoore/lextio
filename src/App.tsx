@@ -439,7 +439,14 @@ const App: React.FC = () => {
             .split("|")
             .filter(s => s.trim().length > 0);
             
-          for (const p of parts) result.push(p);
+          for (let i = 0; i < parts.length; i++) {
+            let p = parts[i];
+            // Add paragraph marker to the very last sentence of this block
+            if (i === parts.length - 1) {
+              p = p.trim() + " ¶";
+            }
+            result.push(p);
+          }
         }
       }
       logger.info(`Sentence splitting complete. Found ${result.length} sentences.`);
