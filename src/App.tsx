@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2, LayoutGrid, List, Minimize2, Plus } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2, LayoutGrid, List, Minimize2, Plus, AlignJustify, CheckSquare, Square } from 'lucide-react';
 import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -73,8 +73,9 @@ const App: React.FC = () => {
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(-1);
   const [furthestIndex, setFurthestIndex] = useState(0);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-  const [libraryView, setLibraryView] = useState<'list' | 'grid'>('grid');
+  const [libraryView, setLibraryView] = useState<'list' | 'grid' | 'compact'>('grid');
   const [isLibraryFull, setIsLibraryFull] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const {
     isPlaying, rate, setRate,
@@ -358,15 +359,6 @@ const App: React.FC = () => {
   };
 
   const deleteLibraryItem = (id: string) => {
-    if (!confirm('Delete this book from your library?')) return;
-    setLibrary(prev => {
-      const updated = prev.filter(i => i.id !== id);
-      localStorage.setItem('voice-reader-library', JSON.stringify(updated));
-      return updated;
-    });
-    if (currentBook?.id === id) {
-      setContent('');
-      setFileName('');
     }
   };
 
@@ -721,9 +713,18 @@ const App: React.FC = () => {
                 className={`library-panel glass ${isLibraryFull ? 'full-screen' : ''}`}
               >
                 <div className="library-header">
-                  <h2 className="library-title">
-                    <Library size={22} style={{ color: 'var(--accent)' }} /> Library
-                  </h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <h2 className="library-title">
+                      <Library size={22} style={{ color: 'var(--accent)' }} /> Library
+                    </h2>
+                    <button 
+                      className={`select-all-btn ${selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? 'active' : ''}`}
+                      onClick={selectAll}
+                      title="Select All"
+                    >
+                      {selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
+                    </button>
+                  </div>
                   <div className="library-controls">
                     <button 
                       className="control-icon-btn highlight" 
@@ -754,6 +755,13 @@ const App: React.FC = () => {
                     >
                       <List size={18} />
                     </button>
+                    <button 
+                      className={`control-icon-btn ${libraryView === 'compact' ? 'active' : ''}`} 
+                      onClick={() => setLibraryView('compact')}
+                      title="Compact View"
+                    >
+                      <AlignJustify size={18} />
+                    </button>
                     <div className="v-divider" />
                     <button 
                       className="control-icon-btn" 
@@ -768,6 +776,33 @@ const App: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                {selectedIds.size > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    className="bulk-actions-bar glass"
+                  >
+                    <span className="selection-count">{selectedIds.size} selected</span>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <select 
+                        className="move-to-select"
+                        onChange={(e) => moveSelected(e.target.value || undefined)}
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Move to...</option>
+                        <option value="">No Folder</option>
+                        {folders.map(f => (
+                          <option key={f.id} value={f.id}>{f.name}</option>
+                        ))}
+                      </select>
+                      <button className="bulk-delete-btn" onClick={deleteSelected}>
+                        <Trash2 size={14} /> Delete
+                      </button>
+                      <button className="bulk-cancel-btn" onClick={() => setSelectedIds(new Set())}>Cancel</button>
+                    </div>
+                  </motion.div>
+                )}
 
               {/* Search Bar */}
               <div className="search-container">
@@ -815,13 +850,20 @@ const App: React.FC = () => {
                   ) : filteredLibrary.map(item => (
                     <div key={item.id} className={`library-item-group ${libraryView}`}>
                       <div
-                        className={`library-item ${currentBook?.id === item.id ? 'active' : ''}`}
-                        onClick={() => {
-                          setContent(item.content);
-                          setFileName(item.title);
-                          setActiveSentenceIndex(-1);
-                          if (item.rate) setRate(item.rate);
-                          setShowLibrary(false);
+                        className={`library-item ${currentBook?.id === item.id ? 'active' : ''} ${selectedIds.has(item.id) ? 'selected' : ''}`}
+                        onClick={(e) => {
+                          if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            toggleSelect(item.id, true);
+                          } else if (selectedIds.size > 0) {
+                            toggleSelect(item.id, true);
+                          } else {
+                            setContent(item.content);
+                            setFileName(item.title);
+                            setActiveSentenceIndex(-1);
+                            if (item.rate) setRate(item.rate);
+                            setShowLibrary(false);
+                          }
                         }}
                       >
                         {libraryView === 'grid' && (
@@ -833,45 +875,60 @@ const App: React.FC = () => {
                                 <FileText size={48} />
                               </div>
                             )}
+                            <div className="selection-overlay">
+                              {selectedIds.has(item.id) ? <CheckSquare size={24} /> : <Plus size={24} />}
+                            </div>
                           </div>
                         )}
                         
                         <div className="library-item-info">
-                          {libraryView === 'list' && (
+                          {(libraryView === 'list' || libraryView === 'compact') && (
+                            <div 
+                              className={`item-select-checkbox ${selectedIds.has(item.id) ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleSelect(item.id, true); }}
+                            >
+                              {selectedIds.has(item.id) ? <CheckSquare size={16} /> : <Square size={16} />}
+                            </div>
+                          )}
+                          {(libraryView === 'list') && (
                             <FileText size={18} style={{ color: 'var(--accent)', flexShrink: 0 }} />
                           )}
-                          <div style={{ minWidth: 0 }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
                             <p className="library-item-title">{item.title}</p>
-                            <p className="library-item-date">
-                              {new Date(item.timestamp).toLocaleDateString()}
-                              {item.folderId && folders.find(f => f.id === item.folderId) && (
-                                <span className="folder-tag">
-                                  • {folders.find(f => f.id === item.folderId)?.name}
-                                </span>
-                              )}
-                            </p>
+                            {libraryView !== 'compact' && (
+                              <p className="library-item-date">
+                                {new Date(item.timestamp).toLocaleDateString()}
+                                {item.folderId && folders.find(f => f.id === item.folderId) && (
+                                  <span className="folder-tag">
+                                    • {folders.find(f => f.id === item.folderId)?.name}
+                                  </span>
+                                )}
+                              </p>
+                            )}
                           </div>
                         </div>
                         
-                        <div className="library-item-actions">
-                          <select 
-                            className="move-to-select"
-                            value={item.folderId || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => moveToFolder(item.id, e.target.value || undefined)}
-                          >
-                            <option value="">No Folder</option>
-                            {folders.map(f => (
-                              <option key={f.id} value={f.id}>{f.name}</option>
-                            ))}
-                          </select>
-                          <button 
-                            className="delete-item-btn" 
-                            onClick={(e) => { e.stopPropagation(); deleteLibraryItem(item.id); }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        {libraryView !== 'compact' && (
+                          <div className="library-item-actions">
+                            <select 
+                              className="move-to-select"
+                              value={item.folderId || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => moveToFolder(item.id, e.target.value || undefined)}
+                            >
+                              <option value="">No Folder</option>
+                              {folders.map(f => (
+                                <option key={f.id} value={f.id}>{f.name}</option>
+                              ))}
+                            </select>
+                            <button 
+                              className="delete-item-btn" 
+                              onClick={(e) => { e.stopPropagation(); deleteLibraryItem(item.id); }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {item.bookmarks && item.bookmarks.length > 0 && libraryView === 'list' && (
