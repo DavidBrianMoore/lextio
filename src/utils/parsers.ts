@@ -19,9 +19,26 @@ export interface ParsedDocument {
  * (Ligatures, split words, weird spacing, and Caesar-shifted PDF gibberish)
  */
 export const cleanupText = (text: string): string => {
-  // 1. Caesar Shift Repair (-3 is very common in broken PDFs)
+  // 1. Caesar Shift Repair & Ligature Fix
+  const REPAIR_WORDS = [
+    'the', 'and', 'with', 'that', 'this', 'for', 'from', 'have', 'been', 'which',
+    'are', 'was', 'were', 'but', 'not', 'help', 'poor', 'enough', 'often', 'their',
+    'would', 'could', 'should', 'more', 'some', 'than', 'other', 'them', 'then'
+  ];
+
   const caesarShift = (str: string, shift: number): string => {
+    // Special mapping for common broken ligatures and shifted punctuation in PDFs
+    const charMap: Record<string, string> = {
+      '¿': 'fi',
+      '¬': 'fl',
+      '\\': 'Y',
+      '[': 'X',
+      ']': 'Z'
+    };
+
     return str.split('').map(char => {
+      if (shift === -3 && charMap[char]) return charMap[char];
+      
       const code = char.charCodeAt(0);
       if (code >= 65 && code <= 90) return String.fromCharCode(((code - 65 + shift + 26) % 26) + 65);
       if (code >= 97 && code <= 122) return String.fromCharCode(((code - 97 + shift + 26) % 26) + 97);
@@ -29,24 +46,40 @@ export const cleanupText = (text: string): string => {
     }).join('');
   };
 
-  const REPAIR_WORDS = ['the', 'and', 'with', 'that', 'this', 'for', 'from', 'have', 'been', 'which'];
-  const getGibberishScore = (str: string): number => {
-    const words = str.toLowerCase().match(/\b[a-z]{2,}\b/g) || [];
-    if (words.length === 0) return 0;
-    const commonCount = words.filter(w => REPAIR_WORDS.includes(w)).length;
-    return commonCount / words.length;
+  const isGibberish = (word: string): boolean => {
+    const cleanWord = word.trim();
+    if (cleanWord.length < 2) return false;
+    // Mostly uppercase words with PDF-shifted punctuation are often garbled
+    if (/^[A-Z\\\[\]\^¿¬]+$/.test(cleanWord)) return true;
+    // Words with extremely low vowel counts (excluding short ones)
+    const vowels = cleanWord.match(/[aeiou]/gi);
+    if (cleanWord.length > 5 && (!vowels || vowels.length / cleanWord.length < 0.15)) return true;
+    return false;
   };
 
-  // Process text in lines to handle mixed garbled/normal text
-  let cleaned = text.split('\n').map(line => {
-    // If the line has very few common words but looks like it could be English, try to fix it
-    if (line.length > 20 && getGibberishScore(line) < 0.05) {
-      const shifted = caesarShift(line, -3);
-      if (getGibberishScore(shifted) > 0.15) {
-        return shifted;
+  // Pre-process common broken ligatures (outside words)
+  let cleaned = text.replace(/æ/g, 'ae').replace(/œ/g, 'oe');
+
+  cleaned = cleaned.split('\n').map(line => {
+    // If the line looks mixed or suspicious, process word by word
+    const parts = line.split(/(\s+)/);
+    const repaired = parts.map(part => {
+      const clean = part.trim();
+      if (isGibberish(part) || clean === 'D') {
+        const shifted = caesarShift(part, -3);
+        // If the shifted version looks like English (has vowels, or is a common word)
+        const vowels = shifted.match(/[aeiou]/gi);
+        const lowerShifted = shifted.toLowerCase();
+        if (vowels && (vowels.length / shifted.length > 0.2 || REPAIR_WORDS.some(w => lowerShifted.includes(w)))) {
+          // If original was all caps, lowercase the repair to match surrounding text
+          return /^[A-Z\\\[\]\^¿¬]+$/.test(clean) ? lowerShifted : shifted;
+        }
+        // Special case for common short garbled words (like 'D' -> 'a')
+        if (clean === 'D') return part.replace('D', 'a');
       }
-    }
-    return line;
+      return part;
+    });
+    return repaired.join('');
   }).join('\n');
 
   // 2. Reconstruct letter-spaced titles (e.g., "A N   E S S A Y" -> "AN   ESSAY")
