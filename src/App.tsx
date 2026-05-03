@@ -5,6 +5,8 @@ import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PretextReader } from './components/PretextReader';
 
+declare const __APP_VERSION__: string;
+
 interface BookmarkEntry {
   index: number;
   note?: string;
@@ -436,6 +438,7 @@ const App: React.FC = () => {
           <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
           <div className="nav-logo-bar" style={{ height: 26 }} />
           <span className="nav-logo-title">LEXTIO</span>
+          <span className="version-tag">v{__APP_VERSION__}</span>
           <div className="nav-logo-bar" style={{ height: 26 }} />
           <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
           <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />

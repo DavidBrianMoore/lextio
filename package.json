@@ -1,13 +1,15 @@
 {
   "name": "voice-reader",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "push-deploy": "npm version patch --no-git-tag-version && git add . && git commit -m \"Version bump\" && git push origin main && npm run deploy"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.4",
