@@ -2,9 +2,11 @@ import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
 
-// Disable external worker — cross-origin workers fail silently on iOS Safari.
-// Running on main thread is slower but universally compatible.
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+// Import the worker as a same-origin bundled asset via Vite's ?url suffix.
+// This avoids CORS issues on iOS Safari (CDN workers are blocked) and the
+// SecurityError caused by workerSrc='' in pdfjs-dist v5.
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 export interface ParsedDocument {
   text: string;
@@ -16,7 +18,7 @@ export const parsePDF = async (file: File): Promise<ParsedDocument> => {
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ 
       data: arrayBuffer,
-      useSystemFonts: true
+      useSystemFonts: true,
     });
     
     const pdf = await loadingTask.promise;
