@@ -5,6 +5,8 @@ interface PretextReaderProps {
   activeSentenceIndex: number;
   onSentenceClick: (index: number) => void;
   scrollMode?: 'center' | 'natural';
+  fontSize?: number;
+  fontFamily?: string;
 }
 
 export const PretextReader: React.FC<PretextReaderProps> = ({
@@ -12,6 +14,8 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
   activeSentenceIndex,
   onSentenceClick,
   scrollMode = 'center',
+  fontSize = 1.25,
+  fontFamily = "'Outfit', sans-serif",
 }) => {
   const activeRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +35,7 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
   const [title, ...body] = sentences;
 
   return (
-    <div className="pretext-reader-root">
+    <div className="pretext-reader-root" style={{ fontSize: `${fontSize}rem`, fontFamily }}>
       {/* Title block */}
       <div
         className={`vscroll-block title-block ${activeSentenceIndex === 0 ? 'active' : activeSentenceIndex > 0 ? 'past' : ''}`}

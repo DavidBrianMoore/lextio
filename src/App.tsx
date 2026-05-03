@@ -61,6 +61,28 @@ const App: React.FC = () => {
     } catch (e) {}
     return 'center';
   });
+
+  const [readerFontSize, setReaderFontSize] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('voice-reader-reader-settings');
+      if (saved) {
+        const { fontSize } = JSON.parse(saved);
+        if (fontSize) return fontSize;
+      }
+    } catch (e) {}
+    return 1.25;
+  });
+
+  const [readerFontFamily, setReaderFontFamily] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('voice-reader-reader-settings');
+      if (saved) {
+        const { fontFamily } = JSON.parse(saved);
+        if (fontFamily) return fontFamily;
+      }
+    } catch (e) {}
+    return "'Outfit', sans-serif";
+  });
   
   const [fileName, setFileName] = useState<string>('');
   const [selectedFolderId, setSelectedFolderId] = useState<string | 'all' | 'uncategorized'>('all');
@@ -149,8 +171,17 @@ const App: React.FC = () => {
 
   // Persist settings
   useEffect(() => {
+    if (isFirstRender.current) return;
     localStorage.setItem('voice-reader-settings', JSON.stringify({ scrollMode }));
   }, [scrollMode]);
+
+  useEffect(() => {
+    if (isFirstRender.current) return;
+    localStorage.setItem('voice-reader-reader-settings', JSON.stringify({ 
+      fontSize: readerFontSize, 
+      fontFamily: readerFontFamily 
+    }));
+  }, [readerFontSize, readerFontFamily]);
 
   // Persist session position and update library-wide rate
   useEffect(() => {
@@ -596,6 +627,8 @@ const App: React.FC = () => {
               activeSentenceIndex={activeSentenceIndex}
               onSentenceClick={playFromIndex}
               scrollMode={scrollMode}
+              fontSize={readerFontSize}
+              fontFamily={readerFontFamily}
             />
           </div>
         ) : !isParsing ? (
@@ -1130,6 +1163,42 @@ const App: React.FC = () => {
                       Natural
                     </button>
                   </div>
+                </div>
+
+                {/* Reader Appearance */}
+                <div className="settings-group">
+                  <label className="settings-label">Reader Font</label>
+                  <select 
+                    value={readerFontFamily} 
+                    onChange={(e) => setReaderFontFamily(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#fff',
+                      padding: '0.875rem',
+                      borderRadius: '12px',
+                      outline: 'none',
+                      fontSize: '0.875rem',
+                      fontFamily: 'inherit',
+                      marginBottom: '1rem'
+                    }}
+                  >
+                    <option value="'Outfit', sans-serif">Outfit (Default)</option>
+                    <option value="'Inter', sans-serif">Inter</option>
+                    <option value="'Lora', serif">Lora (Serif)</option>
+                    <option value="'Merriweather', serif">Merriweather (Serif)</option>
+                    <option value="'Roboto Mono', monospace">Roboto Mono</option>
+                    <option value="'Playfair Display', serif">Playfair Display</option>
+                  </select>
+
+                  <label className="settings-label">Font Size ({readerFontSize}rem)</label>
+                  <input 
+                    type="range" min="0.8" max="3" step="0.05" 
+                    value={readerFontSize} 
+                    onChange={(e) => setReaderFontSize(parseFloat(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--accent)' }}
+                  />
                 </div>
 
               </div>
