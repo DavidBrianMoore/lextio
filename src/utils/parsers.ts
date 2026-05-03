@@ -95,11 +95,40 @@ export const parsePDF = async (file: File): Promise<ParsedDocument> => {
       if (i % 20 === 0) logger.info(`parsePDF: Processing page ${i}/${maxPages}...`);
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const strings = content.items.map((item: any) => {
-        if ('str' in item) return item.str;
-        return '';
-      });
-      fullText += strings.join(' ') + '\n';
+      
+      let pageText = '';
+      let lastX = -1;
+      let lastY = -1;
+      let lastWidth = 0;
+
+      for (const item of content.items as any[]) {
+        if (!('str' in item)) continue;
+        const str = item.str;
+        const x = item.transform[4];
+        const y = item.transform[5];
+        const width = item.width || 0;
+
+        // New line or vertical jump
+        if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+          pageText += ' ';
+        } 
+        // Horizontal gap detection (detects missing spaces in PDF stream)
+        else if (lastX !== -1) {
+          const gap = x - (lastX + lastWidth);
+          const fontSize = Math.abs(item.transform[0]);
+          // If gap is > 15% of font size, it's likely a space
+          if (gap > fontSize * 0.15) {
+             pageText += ' ';
+          }
+        }
+
+        pageText += str;
+        lastX = x;
+        lastY = y;
+        lastWidth = width;
+      }
+      
+      fullText += pageText + '\n';
       // Yield to browser every 10 pages to avoid watchdog timeouts on iOS
       if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
     }
