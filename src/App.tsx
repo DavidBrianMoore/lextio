@@ -114,6 +114,51 @@ const App: React.FC = () => {
 
   const isFirstRender = useRef(true);
 
+  // iOS 18+ Background Audio Keep-Alive
+  // This prevents the browser from killing speech synthesis when the screen locks
+  useEffect(() => {
+    if (!/iPhone|iPad/.test(navigator.userAgent)) return;
+    
+    let audioCtx: AudioContext | null = null;
+    let oscillator: OscillatorNode | null = null;
+    let gainNode: GainNode | null = null;
+
+    const startSilentAudio = () => {
+      try {
+        if (audioCtx) return;
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        audioCtx = new AudioContextClass();
+        oscillator = audioCtx.createOscillator();
+        gainNode = audioCtx.createGain();
+        
+        // Nearly silent but enough to keep the audio session active
+        gainNode.gain.value = 0.001; 
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start();
+        logger.info('iOS Background Audio Keep-Alive active');
+      } catch (err) {
+        logger.error('Failed to start background audio keep-alive', err);
+      }
+    };
+
+    // iOS requires a user interaction to start the AudioContext
+    window.addEventListener('touchstart', startSilentAudio, { once: true });
+    window.addEventListener('click', startSilentAudio, { once: true });
+
+    return () => {
+      if (oscillator) {
+        try { oscillator.stop(); } catch(e) {}
+      }
+      if (audioCtx) {
+        try { audioCtx.close(); } catch(e) {}
+      }
+    };
+  }, []);
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
