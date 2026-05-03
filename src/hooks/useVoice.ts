@@ -136,7 +136,9 @@ export const useVoice = () => {
     
     if (!text) return;
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Strip paragraph markers (¶) so they are visible but not read aloud
+    const audibleText = text.replace(/¶/g, '');
+    const utterance = new SpeechSynthesisUtterance(audibleText);
     if (selectedVoice) utterance.voice = selectedVoice;
     
     // iOS 18+ speed calibration
