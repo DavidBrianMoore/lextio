@@ -34,22 +34,45 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
   // First sentence is always the document title
   const [title, ...body] = sentences;
 
+  // Windowed rendering to avoid DOM overload
+  const WINDOW_SIZE = 100;
+  const halfWindow = Math.floor(WINDOW_SIZE / 2);
+  
+  // Calculate window range around active sentence (offset by 1 because body starts at index 1)
+  const bodyActiveIdx = activeSentenceIndex - 1;
+  let startIdx = Math.max(0, bodyActiveIdx - halfWindow);
+  let endIdx = Math.min(body.length, startIdx + WINDOW_SIZE);
+  
+  // Adjust start if we're near the end
+  if (endIdx === body.length) {
+    startIdx = Math.max(0, endIdx - WINDOW_SIZE);
+  }
+
+  const visibleBody = body.slice(startIdx, endIdx);
+  const topSpacerHeight = startIdx * 60; // Estimated height per sentence
+  const bottomSpacerHeight = (body.length - endIdx) * 60;
+
   return (
     <div className="pretext-reader-root" style={{ fontSize: `${fontSize}rem`, fontFamily }}>
-      {/* Title block */}
-      <div
-        className={`vscroll-block title-block ${activeSentenceIndex === 0 ? 'active' : activeSentenceIndex > 0 ? 'past' : ''}`}
-        onClick={() => onSentenceClick(0)}
-        ref={activeSentenceIndex === 0 ? activeRef : undefined}
-      >
-        <h2 className={`sentence ${activeSentenceIndex === 0 ? 'active' : activeSentenceIndex > 0 ? 'past' : 'future'}`}>
-          {title}
-        </h2>
-      </div>
+      {/* Title block - Always render if visible or active */}
+      {(startIdx === 0 || activeSentenceIndex === 0) && (
+        <div
+          className={`vscroll-block title-block ${activeSentenceIndex === 0 ? 'active' : activeSentenceIndex > 0 ? 'past' : ''}`}
+          onClick={() => onSentenceClick(0)}
+          ref={activeSentenceIndex === 0 ? activeRef : undefined}
+        >
+          <h2 className={`sentence ${activeSentenceIndex === 0 ? 'active' : activeSentenceIndex > 0 ? 'past' : 'future'}`}>
+            {title}
+          </h2>
+        </div>
+      )}
 
-      {/* Body sentences */}
-      {body.map((sentence, i) => {
-        const globalIndex = i + 1;
+      {/* Top Spacer */}
+      {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
+
+      {/* Visible Body sentences */}
+      {visibleBody.map((sentence, i) => {
+        const globalIndex = startIdx + i + 1;
         const isActive = globalIndex === activeSentenceIndex;
         const isPast = globalIndex < activeSentenceIndex;
         const stateClass = isActive ? 'active' : isPast ? 'past' : 'future';
@@ -67,6 +90,9 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
           </div>
         );
       })}
+
+      {/* Bottom Spacer */}
+      {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
     </div>
   );
 };

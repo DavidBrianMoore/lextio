@@ -272,14 +272,21 @@ const App: React.FC = () => {
       if (!content) return [];
       const result: string[] = [];
       if (fileName) result.push(fileName.replace(/\.[^/.]+$/, ''));
+      
       const lines = content.split(/\r?\n/);
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed) {
-          const parts = trimmed.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+          // Compatible splitting: use a delimiter then clean up
+          const parts = trimmed
+            .replace(/([.!?])\s+/g, "$1|")
+            .split("|")
+            .filter(s => s.trim().length > 0);
+            
           for (const p of parts) result.push(p);
         }
       }
+      logger.info(`Sentence splitting complete. Found ${result.length} sentences.`);
       return result.length > 0 ? result : [content];
     } catch (e) {
       logger.error('Failed to process sentences', e);
