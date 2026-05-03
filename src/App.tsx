@@ -4,7 +4,7 @@ import {
   Settings, Volume2, SkipBack, SkipForward, Play, Pause, X, Globe, ChevronDown,
   LayoutGrid, List, AlignJustify, Maximize2, Minimize2, FolderPlus, Folder as FolderIcon,
   RotateCcw, FastForward, Bookmark, History, Shuffle, ClipboardCheck,
-  Clock, ArrowDownAZ
+  Clock, ArrowDownAZ, SortAsc
 } from 'lucide-react';
 import { logger } from './utils/logger';
 import { useVoice } from './hooks/useVoice';
@@ -1220,19 +1220,28 @@ const App: React.FC = () => {
                       <AlignJustify size={18} />
                     </button>
                     <div className="v-divider" />
-                    <button 
-                      className="control-icon-btn active" 
-                      onClick={() => {
-                        if (librarySort === 'newest') setLibrarySort('oldest');
-                        else if (librarySort === 'oldest') setLibrarySort('alpha');
-                        else setLibrarySort('newest');
-                      }}
-                      title={`Sort: ${librarySort.charAt(0).toUpperCase() + librarySort.slice(1)}`}
-                    >
-                      {librarySort === 'newest' && <Clock size={18} />}
-                      {librarySort === 'oldest' && <History size={18} />}
-                      {librarySort === 'alpha' && <ArrowDownAZ size={18} />}
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.03)', padding: '4px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <SortAsc size={14} style={{ color: 'var(--accent)', opacity: 0.8 }} />
+                      <select 
+                        value={librarySort} 
+                        onChange={(e) => setLibrarySort(e.target.value as any)}
+                        style={{ 
+                          background: 'transparent', 
+                          border: 'none', 
+                          color: 'rgba(255,255,255,0.7)', 
+                          fontSize: '0.65rem', 
+                          fontWeight: 800, 
+                          textTransform: 'uppercase', 
+                          outline: 'none', 
+                          cursor: 'pointer',
+                          letterSpacing: '0.05em'
+                        }}
+                      >
+                        <option value="newest" style={{ background: '#121315' }}>Newest</option>
+                        <option value="oldest" style={{ background: '#121315' }}>Oldest</option>
+                        <option value="alpha" style={{ background: '#121315' }}>A-Z</option>
+                      </select>
+                    </div>
                     <div className="v-divider" />
                     <button 
                       className="control-icon-btn" 
