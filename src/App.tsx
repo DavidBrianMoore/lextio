@@ -29,17 +29,44 @@ interface LibraryEntry {
 }
 
 const App: React.FC = () => {
-  const [content, setContent] = useState<string>('');
+  const [library, setLibrary] = useState<LibraryEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('voice-reader-library');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch (e) { console.error('Failed to init library', e); }
+    return [];
+  });
+  const [folders, setFolders] = useState<Folder[]>(() => {
+    try {
+      const saved = localStorage.getItem('voice-reader-folders');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch (e) { console.error('Failed to init folders', e); }
+    return [];
+  });
+  const [scrollMode, setScrollMode] = useState<'center' | 'natural'>(() => {
+    try {
+      const saved = localStorage.getItem('voice-reader-settings');
+      if (saved) {
+        const { scrollMode: savedScrollMode } = JSON.parse(saved);
+        if (savedScrollMode) return savedScrollMode;
+      }
+    } catch (e) {}
+    return 'center';
+  });
+  
   const [fileName, setFileName] = useState<string>('');
-  const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<string | 'all' | 'uncategorized'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [parsingCount, setParsingCount] = useState(0);
-  const [library, setLibrary] = useState<LibraryEntry[]>([]);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [scrollMode, setScrollMode] = useState<'center' | 'natural'>('center');
   const [focusMode, setFocusMode] = useState(false);
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(-1);
   const [furthestIndex, setFurthestIndex] = useState(0);
@@ -75,45 +102,24 @@ const App: React.FC = () => {
     localStorage.setItem('voice-reader-folders', JSON.stringify(folders));
   }, [folders]);
 
-  // Load library and settings from storage
+  const [content, setContent] = useState<string>('');
+  // Load session position from storage
   useEffect(() => {
-    const savedLib = localStorage.getItem('voice-reader-library');
-    if (savedLib) {
-      try {
-        const parsed = JSON.parse(savedLib);
-        if (Array.isArray(parsed)) setLibrary(parsed);
-      } catch (e) { console.error('Failed to parse library', e); }
-    }
-    
-    const savedFolders = localStorage.getItem('voice-reader-folders');
-    if (savedFolders) {
-      try {
-        const parsed = JSON.parse(savedFolders);
-        if (Array.isArray(parsed)) setFolders(parsed);
-      } catch (e) { console.error('Failed to parse folders', e); }
-    }
-    
-    const savedSettings = localStorage.getItem('voice-reader-settings');
-    if (savedSettings) {
-      const { scrollMode: savedScrollMode } = JSON.parse(savedSettings);
-      if (savedScrollMode) setScrollMode(savedScrollMode);
-    }
-
-    // Restore last session
     const lastSession = localStorage.getItem('voice-reader-last-session');
     if (lastSession) {
-      const { bookId, index, furthest } = JSON.parse(lastSession);
-      const savedLibData = savedLib ? JSON.parse(savedLib) : [];
-      const lastBook = savedLibData.find((b: any) => b.id === bookId);
-      if (lastBook) {
-        setContent(lastBook.content);
-        setFileName(lastBook.title);
-        setActiveSentenceIndex(index);
-        setFurthestIndex(furthest || index);
-        if (lastBook.rate) setRate(lastBook.rate);
-      }
+      try {
+        const { bookId, index, furthest } = JSON.parse(lastSession);
+        const book = library.find(b => b.id === bookId);
+        if (book) {
+          setContent(book.content);
+          setFileName(book.title);
+          setActiveSentenceIndex(index);
+          setFurthestIndex(furthest || index);
+          if (book.rate) setRate(book.rate);
+        }
+      } catch (e) {}
     }
-  }, [setRate]);
+  }, []); // Only on mount
 
   // Persist settings
   useEffect(() => {
