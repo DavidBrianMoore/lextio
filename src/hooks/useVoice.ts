@@ -60,10 +60,35 @@ export const useVoice = () => {
 
   useEffect(() => {
     updateVoices();
+    
+    // iOS voice loading quirk: voices often take a moment to populate
+    const timer = setInterval(() => {
+      const currentVoices = synth.getVoices();
+      if (currentVoices.length > 0) {
+        updateVoices();
+        clearInterval(timer);
+      }
+    }, 1000);
+
     if (synth.onvoiceschanged !== undefined) {
       synth.onvoiceschanged = updateVoices;
     }
+    
+    return () => {
+      clearInterval(timer);
+      if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = null;
+      }
+    };
   }, [updateVoices]);
+
+  // Log detected voices for debugging
+  useEffect(() => {
+    if (voices.length > 0) {
+      const voiceNames = voices.map(v => v.name).join(', ');
+      logger.info(`Voices detected (${voices.length}): ${voiceNames}`);
+    }
+  }, [voices]);
 
   // Check for maxRate violations
   useEffect(() => {
