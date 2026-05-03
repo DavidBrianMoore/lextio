@@ -108,6 +108,7 @@ const App: React.FC = () => {
   const [parsingCount, setParsingCount] = useState(0);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showVoicePicker, setShowVoicePicker] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(-1);
   const [furthestIndex, setFurthestIndex] = useState(0);
@@ -839,18 +840,54 @@ const App: React.FC = () => {
               </div>
               <span className="vol-label">100%</span>
             </div>
-            <div className="waveform-placeholder">
-              {waveHeights.map((h, i) => (
-                <div
-                  key={i}
-                  className="wave-bar"
-                  style={{
-                    height: isPlaying ? `${h}%` : '20%',
-                    background: isPlaying ? 'var(--accent)' : 'rgba(255,255,255,0.15)',
-                    transition: `height 0.4s ease ${i * 0.04}s, background 0.3s ease`,
-                  }}
-                />
-              ))}
+            <div 
+              className={`voice-pill${showVoicePicker ? ' active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowVoicePicker(!showVoicePicker);
+              }}
+              title="Change Voice"
+              style={{ position: 'relative' }}
+            >
+              <Globe size={14} style={{ color: 'var(--accent)' }} />
+              <span className="voice-name-label">
+                {selectedVoice?.name.split(' ')[0] || 'Narrator'}
+              </span>
+              
+              <AnimatePresence>
+                {showVoicePicker && (
+                  <motion.div 
+                    className="voice-picker-menu glass"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="voice-picker-header">
+                      Select Narrator
+                    </div>
+                    <div className="voice-picker-list">
+                      {voices.map(v => (
+                        <div 
+                          key={v.name}
+                          className={`voice-picker-item${selectedVoice?.name === v.name ? ' active' : ''}`}
+                          onClick={() => {
+                            setSelectedVoice(v.voice);
+                            setShowVoicePicker(false);
+                          }}
+                        >
+                          <div className="voice-item-info">
+                            <span className="voice-item-name">{v.name}</span>
+                            <span className="voice-item-lang">{v.lang.split('-')[0].toUpperCase()}</span>
+                          </div>
+                          {v.isPremium && <span className="premium-sparkle">✨</span>}
+                          {selectedVoice?.name === v.name && <div className="active-dot" />}
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -894,16 +931,22 @@ const App: React.FC = () => {
 
           {/* Right: Speed + Icons */}
           <div className="control-right">
-            <div className="speed-section">
-              {[1, 2, 3, 4].map(s => (
-                <button
-                  key={s}
-                  className={`speed-btn${Math.round(rate) === s ? ' active' : ''}`}
-                  onClick={() => setRate(s)}
-                >
-                  {s}x
-                </button>
-              ))}
+            <div className="speed-adjust-group">
+              <button 
+                className="speed-btn-small" 
+                onClick={() => setRate(Math.max(0.5, Math.round((rate - 0.1) * 10) / 10))}
+              >
+                −
+              </button>
+              <div className="speed-readout">
+                {rate.toFixed(1)}
+              </div>
+              <button 
+                className="speed-btn-small" 
+                onClick={() => setRate(Math.min(4.0, Math.round((rate + 0.1) * 10) / 10))}
+              >
+                +
+              </button>
             </div>
             <div className="extra-icons">
               <button 
