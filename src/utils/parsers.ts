@@ -2,8 +2,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
 
-// Initialize PDF.js worker using the version from the package
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Disable external worker — cross-origin workers fail silently on iOS Safari.
+// Running on main thread is slower but universally compatible.
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 
 export interface ParsedDocument {
   text: string;
@@ -136,9 +137,12 @@ export const parseEPUB = async (file: File): Promise<ParsedDocument> => {
     if (!htmlContent) continue;
     
     const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+    // Remove noise elements
     doc.querySelectorAll('script, style, nav, [epub\\:type="toc"]').forEach(el => el.remove());
     
-    const text = (doc.body?.innerText || doc.body?.textContent || '').replace(/\s+/g, ' ').trim();
+    // Use textContent (not innerText — innerText is unreliable on DOMParser docs in iOS Safari)
+    const rawText = doc.body?.textContent ?? '';
+    const text = rawText.replace(/\s+/g, ' ').trim();
     if (text.length > 10) {
       textChunks.push(text);
     }

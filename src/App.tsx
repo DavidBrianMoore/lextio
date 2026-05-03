@@ -656,7 +656,7 @@ const App: React.FC = () => {
           <button className="nav-btn" onClick={handleUrlLoad} title="Load from URL">
             <Globe size={16} />
           </button>
-          <input type="file" id="file-upload" style={{ display: 'none' }} accept=".pdf,.docx,.epub" onChange={handleFileUpload} multiple />
+          <input type="file" id="file-upload" style={{ display: 'none' }} accept=".pdf,.docx,.epub,application/pdf,application/epub+zip,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileUpload} multiple />
           <label htmlFor="file-upload" className="nav-upload-label">
             <span>{fileName ? 'Add More' : 'Upload'}</span>
           </label>
