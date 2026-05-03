@@ -1235,8 +1235,9 @@ const App: React.FC = () => {
                         <Volume2 size={12} /> PRO TIP: BETTER VOICES
                       </p>
                       <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
-                        Browsers on iOS are restricted to system voices. For the best experience, download <strong>Siri</strong> or <strong>Enhanced</strong> voices in 
-                        <em> Settings → Accessibility → Spoken Content → Voices</em>.
+                        iOS browsers are restricted to system voices. To get high-quality narration, go to:
+                        <br /><strong>Settings → Accessibility → Spoken Content → Voices</strong>.
+                        <br />Choose a language and download any voice labeled <strong>"Enhanced"</strong> or <strong>"Siri"</strong>.
                       </p>
                     </div>
                   )}
