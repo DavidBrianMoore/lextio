@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '../utils/logger';
 
 export interface FormattedVoice {
   voice: SpeechSynthesisVoice;
