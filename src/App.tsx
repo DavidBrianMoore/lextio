@@ -3,7 +3,8 @@ import {
   FileText, Plus, Search, Library, Trash2, CheckSquare, Square, 
   Settings, Volume2, SkipBack, SkipForward, Play, Pause, X, Globe, ChevronDown,
   LayoutGrid, List, AlignJustify, Maximize2, Minimize2, FolderPlus, Folder as FolderIcon,
-  RotateCcw, FastForward, Bookmark, History, Shuffle, ClipboardCheck
+  RotateCcw, FastForward, Bookmark, History, Shuffle, ClipboardCheck,
+  SortAsc, Clock, ArrowDownAZ
 } from 'lucide-react';
 import { logger } from './utils/logger';
 import { useVoice } from './hooks/useVoice';
@@ -129,6 +130,7 @@ const App: React.FC = () => {
   const [libraryWidth, setLibraryWidth] = useState(900);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set(['US']));
+  const [librarySort, setLibrarySort] = useState<'newest' | 'oldest' | 'alpha'>('newest');
 
   const {
     isPlaying, rate, setRate,
@@ -720,7 +722,7 @@ const App: React.FC = () => {
 
   const filteredLibrary = useMemo(() => {
     if (!Array.isArray(library)) return [];
-    return library.filter(item => {
+    const filtered = library.filter(item => {
       if (!item || !item.title) return false;
       const titleLower = item.title.toLowerCase();
       const queryLower = searchQuery.toLowerCase();
@@ -731,7 +733,18 @@ const App: React.FC = () => {
         item.folderId === selectedFolderId;
       return matchesSearch && matchesFolder;
     });
-  }, [library, searchQuery, selectedFolderId]);
+
+    return [...filtered].sort((a, b) => {
+      if (librarySort === 'alpha') {
+        return a.title.localeCompare(b.title);
+      } else if (librarySort === 'oldest') {
+        return (a.timestamp || 0) - (b.timestamp || 0);
+      } else {
+        // newest first
+        return (b.timestamp || 0) - (a.timestamp || 0);
+      }
+    });
+  }, [library, searchQuery, selectedFolderId, librarySort]);
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -1205,6 +1218,20 @@ const App: React.FC = () => {
                       title="Compact View"
                     >
                       <AlignJustify size={18} />
+                    </button>
+                    <div className="v-divider" />
+                    <button 
+                      className="control-icon-btn active" 
+                      onClick={() => {
+                        if (librarySort === 'newest') setLibrarySort('oldest');
+                        else if (librarySort === 'oldest') setLibrarySort('alpha');
+                        else setLibrarySort('newest');
+                      }}
+                      title={`Sort: ${librarySort.charAt(0).toUpperCase() + librarySort.slice(1)}`}
+                    >
+                      {librarySort === 'newest' && <Clock size={18} />}
+                      {librarySort === 'oldest' && <History size={18} />}
+                      {librarySort === 'alpha' && <ArrowDownAZ size={18} />}
                     </button>
                     <div className="v-divider" />
                     <button 
