@@ -451,15 +451,6 @@ const App: React.FC = () => {
     }
   }, [rate, selectedVoice]); // eslint-disable-line
 
-  // Handle pending play when content/sentences change
-  useEffect(() => {
-    if (pendingPlayIndex !== null && sentences.length > 0) {
-      // Ensure we have a valid index for the NEW sentences
-      const targetIndex = Math.min(pendingPlayIndex, sentences.length - 1);
-      playFromIndex(targetIndex);
-      setPendingPlayIndex(null);
-    }
-  }, [sentences, pendingPlayIndex]); // eslint-disable-line
 
   // Split content into sentences
   const sentences = useMemo(() => {
@@ -525,6 +516,16 @@ const App: React.FC = () => {
     
     return list;
   }, [sentences]);
+
+  // Handle pending play when content/sentences change
+  useEffect(() => {
+    if (pendingPlayIndex !== null && sentences.length > 0) {
+      // Ensure we have a valid index for the NEW sentences
+      const targetIndex = Math.min(pendingPlayIndex, sentences.length - 1);
+      playFromIndex(targetIndex);
+      setPendingPlayIndex(null);
+    }
+  }, [sentences, pendingPlayIndex]); // eslint-disable-line
 
   const [showChapters, setShowChapters] = useState(false);
 
