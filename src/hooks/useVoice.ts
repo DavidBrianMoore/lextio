@@ -21,23 +21,40 @@ export const useVoice = () => {
 
   const updateVoices = useCallback(() => {
     const availableVoices = synth.getVoices();
-    const formattedVoices = availableVoices.map(v => ({
-      voice: v,
-      name: v.name,
-      lang: v.lang,
-      // Natural voices often have a limit around 2x or 3x. 
-      // We'll set a soft 'maxRate' for them and warn the user.
-      maxRate: v.name.includes('Natural') ? 2.0 : 4.0
-    }));
+    const isApple = /iPhone|iPad|Macintosh/.test(navigator.userAgent);
+
+    const formattedVoices = availableVoices.map(v => {
+      const isPremium = v.name.includes('Natural') || 
+                        v.name.includes('Enhanced') || 
+                        v.name.includes('Siri') || 
+                        v.name.includes('Premium');
+      
+      return {
+        voice: v,
+        name: v.name,
+        lang: v.lang,
+        // Premium voices usually have a lower max rate before sounding 'choppy' or failing.
+        maxRate: isPremium ? 2.0 : 4.0
+      };
+    });
 
     setVoices(formattedVoices);
     
-    // Default to high-quality American English Natural voice
-    const preferred = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Natural')) || 
-                      availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
-                      availableVoices.find(v => v.lang === 'en-US') ||
-                      availableVoices[0];
-                      
+    // Default to high-quality American English
+    let preferred = availableVoices.find(v => v.lang === 'en-US' && (v.name.includes('Natural') || v.name.includes('Enhanced')));
+    
+    if (!preferred && isApple) {
+      preferred = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Siri')) ||
+                  availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Samantha (Enhanced)')) ||
+                  availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Alex'));
+    }
+
+    if (!preferred) {
+      preferred = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
+                  availableVoices.find(v => v.lang === 'en-US') ||
+                  availableVoices[0];
+    }
+                       
     if (preferred) setSelectedVoice(preferred);
   }, [synth]);
 
