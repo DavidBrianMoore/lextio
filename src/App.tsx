@@ -926,33 +926,36 @@ const App: React.FC = () => {
                 />
               </div>
 
-              {/* Folders List */}
-              <div className="folders-section">
-                <div 
-                  className={`folder-chip ${selectedFolderId === 'all' ? 'active' : ''}`}
-                  onClick={() => setSelectedFolderId('all')}
-                >
-                  <History size={14} /> All
-                </div>
-                <div 
-                  className={`folder-chip ${selectedFolderId === 'uncategorized' ? 'active' : ''}`}
-                  onClick={() => setSelectedFolderId('uncategorized')}
-                >
-                  <FileText size={14} /> Unsorted
-                </div>
-                {folders.map(folder => (
+                {/* Folders List */}
+                <div className="folders-section">
                   <div 
-                    key={folder.id} 
-                    className={`folder-chip ${selectedFolderId === folder.id ? 'active' : ''}`}
-                    onClick={() => setSelectedFolderId(folder.id)}
+                    className={`folder-chip ${selectedFolderId === 'all' ? 'active' : ''}`}
+                    onClick={() => setSelectedFolderId('all')}
                   >
-                    <FolderIcon size={14} /> {folder.name}
-                    <button className="folder-delete-btn" onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }}>
-                      <Trash2 size={10} />
-                    </button>
+                    <History size={14} /> All
                   </div>
-                ))}
-              </div>
+                  <div 
+                    className={`folder-chip ${selectedFolderId === 'uncategorized' ? 'active' : ''}`}
+                    onClick={() => setSelectedFolderId('uncategorized')}
+                  >
+                    <FileText size={14} /> Unsorted
+                  </div>
+                  {folders.map(folder => (
+                    <div 
+                      key={folder.id} 
+                      className={`folder-chip ${selectedFolderId === folder.id ? 'active' : ''}`}
+                      onClick={() => setSelectedFolderId(folder.id)}
+                    >
+                      <FolderIcon size={14} /> {folder.name}
+                      <button className="folder-delete-btn" onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }}>
+                        <Trash2 size={10} />
+                      </button>
+                    </div>
+                  ))}
+                  <button className="folder-chip add-folder" onClick={createFolder} title="New Folder">
+                    <FolderPlus size={14} /> New
+                  </button>
+                </div>
 
                 <div className={`library-list ${libraryView}`}>
                   {filteredLibrary.length === 0 ? (
