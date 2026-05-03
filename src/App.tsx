@@ -147,12 +147,13 @@ const App: React.FC = () => {
       // 1. Premium first
       if (a.isPremium !== b.isPremium) return a.isPremium ? -1 : 1;
       
-      // 2. Locale priority: US > UK > other English > others
+      // 2. Locale priority: US > UK > Australia > other English > others
       const getLocalePriority = (lang: string) => {
         if (lang === 'en-US') return 1;
         if (lang === 'en-GB') return 2;
-        if (lang.startsWith('en')) return 3;
-        return 4;
+        if (lang === 'en-AU') return 3;
+        if (lang.startsWith('en')) return 4;
+        return 5;
       };
       
       const prioA = getLocalePriority(a.lang);
