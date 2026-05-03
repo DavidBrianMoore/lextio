@@ -60,6 +60,21 @@ const App: React.FC = () => {
     }
   };
 
+  // Persist library and folders
+  useEffect(() => {
+    try {
+      localStorage.setItem('voice-reader-library', JSON.stringify(library));
+    } catch (e) {
+      if (e instanceof Error && e.name === 'QuotaExceededError') {
+        console.warn('Storage quota exceeded, could not save library.');
+      }
+    }
+  }, [library]);
+
+  useEffect(() => {
+    localStorage.setItem('voice-reader-folders', JSON.stringify(folders));
+  }, [folders]);
+
   // Load library and settings from storage
   useEffect(() => {
     const savedLib = localStorage.getItem('voice-reader-library');
@@ -147,16 +162,23 @@ const App: React.FC = () => {
 
   // Split content into sentences
   const sentences = useMemo(() => {
-    if (!content) return [];
-    const result: string[] = [];
-    if (fileName) result.push(fileName.replace(/\.[^/.]+$/, ''));
-    content.split(/\r?\n/).forEach(line => {
-      const trimmed = line.trim();
-      if (trimmed) {
-        result.push(...trimmed.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0));
+    try {
+      if (!content) return [];
+      const result: string[] = [];
+      if (fileName) result.push(fileName.replace(/\.[^/.]+$/, ''));
+      const lines = content.split(/\r?\n/);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed) {
+          const parts = trimmed.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+          for (const p of parts) result.push(p);
+        }
       }
-    });
-    return result.length > 0 ? result : [content];
+      return result.length > 0 ? result : [content];
+    } catch (e) {
+      console.error('Failed to process sentences', e);
+      return [content || ''];
+    }
   }, [content, fileName]);
 
   // Keyboard shortcuts
@@ -196,11 +218,7 @@ const App: React.FC = () => {
           folderId: selectedFolderId !== 'all' && selectedFolderId !== 'uncategorized' ? selectedFolderId : undefined
         };
 
-        setLibrary(prev => {
-          const updated = [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 50);
-          localStorage.setItem('voice-reader-library', JSON.stringify(updated));
-          return updated;
-        });
+        setLibrary(prev => [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 50));
 
         // Set as active if it's the only or last one
         if (files.indexOf(file) === files.length - 1) {
@@ -465,14 +483,7 @@ const App: React.FC = () => {
 
       {/* ── Main Reader ── */}
       <main className="reader-container">
-        {isParsing ? (
-          <div className="loading-state">
-            <div className="spinner" />
-            <p className="loading-text">
-              {parsingCount > 0 ? `Parsing ${parsingCount} Narrative${parsingCount > 1 ? 's' : ''}...` : 'Initializing...'}
-            </p>
-          </div>
-        ) : content ? (
+        {content ? (
           <div className="animate-fade-in">
             <PretextReader
               sentences={sentences}
@@ -481,13 +492,28 @@ const App: React.FC = () => {
               scrollMode={scrollMode}
             />
           </div>
-        ) : (
+        ) : !isParsing ? (
           <div className="empty-state">
             <FileText size={90} strokeWidth={1} style={{ color: 'rgba(255,255,255,0.12)', marginBottom: '1.25rem' }} />
             <p className="empty-label">Begin Your Journey</p>
             <p className="empty-sub">Upload a PDF, EPUB, or DOCX to start</p>
           </div>
-        )}
+        ) : null}
+
+        {/* Background Parsing Indicator */}
+        <AnimatePresence>
+          {isParsing && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="background-loader glass"
+            >
+              <div className="spinner-small" />
+              <span>{parsingCount > 0 ? `Importing ${parsingCount} Narrative${parsingCount > 1 ? 's' : ''}...` : 'Processing...'}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* ── Controls Footer ── */}
