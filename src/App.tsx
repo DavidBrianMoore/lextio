@@ -4,7 +4,7 @@ import {
   Settings, Volume2, SkipBack, SkipForward, Play, Pause, X, Globe, ChevronDown,
   LayoutGrid, List, AlignJustify, Maximize2, Minimize2, FolderPlus, Folder as FolderIcon,
   RotateCcw, FastForward, Bookmark, History, Shuffle, ClipboardCheck,
-  Clock, ArrowDownAZ, SortAsc
+  SortAsc
 } from 'lucide-react';
 import { logger } from './utils/logger';
 import { useVoice } from './hooks/useVoice';
