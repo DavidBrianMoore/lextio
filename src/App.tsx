@@ -1159,6 +1159,20 @@ const App: React.FC = () => {
                 )}
                 <div className="library-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                    {isLibraryFull && (
+                      <>
+                        <div className="nav-logo" onClick={goHome} style={{ cursor: 'pointer', transform: 'scale(0.8)', transformOrigin: 'left center' }} title="Go to Home">
+                          <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
+                          <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
+                          <div className="nav-logo-bar" style={{ height: 26 }} />
+                          <span className="nav-logo-title">LEXTIO</span>
+                          <div className="nav-logo-bar" style={{ height: 26 }} />
+                          <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
+                          <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
+                        </div>
+                        <div className="v-divider" />
+                      </>
+                    )}
                     <h2 className="library-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Library size={22} style={{ color: 'var(--accent)' }} /> LIBRARY
                     </h2>
