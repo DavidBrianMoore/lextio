@@ -1179,3 +1179,87 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ─────────────────────────────────────
+   MOBILE RESPONSIVENESS
+───────────────────────────────────── */
+@media (max-width: 768px) {
+  .library-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1.5rem;
+  }
+
+  .resize-handle {
+    display: none;
+  }
+
+  .control-bar {
+    padding: 1rem;
+    gap: 0.5rem;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+  }
+
+  .playback-main {
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    width: 48px;
+    height: 48px;
+  }
+
+  .header {
+    padding: 1rem 1.5rem;
+  }
+
+  .logo-text {
+    display: none;
+  }
+
+  .reader-container {
+    padding: 4rem 1.5rem 10rem 1.5rem;
+  }
+
+  .sentence {
+    font-size: 1.1em;
+  }
+
+  .bulk-actions-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .bulk-actions-bar > div {
+    justify-content: space-between;
+  }
+
+  .library-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .library-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-actions .btn-secondary span {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 0.5rem;
+  }
+
+  .progress-container {
+    display: none;
+  }
+}
