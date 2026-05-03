@@ -790,8 +790,10 @@ const App: React.FC = () => {
                       className={`select-all-btn ${selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? 'active' : ''}`}
                       onClick={selectAll}
                       title="Select All"
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                     >
-                      {selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
+                      {selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
+                      Select All
                     </button>
                   </div>
                   <div className="library-controls">
