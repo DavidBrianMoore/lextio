@@ -1195,6 +1195,25 @@ const App: React.FC = () => {
                 {/* Voice Selection */}
                 <div className="settings-group">
                   <label className="settings-label">Narrator Voice</label>
+                  
+                  {/iPhone|iPad/.test(navigator.userAgent) && (
+                    <div style={{
+                      padding: '0.75rem',
+                      borderRadius: '12px',
+                      background: 'rgba(52, 199, 89, 0.08)',
+                      border: '1px solid rgba(52, 199, 89, 0.15)',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <p style={{ fontSize: '0.7rem', color: '#34C759', fontWeight: 700, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Volume2 size={12} /> PRO TIP: BETTER VOICES
+                      </p>
+                      <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
+                        Browsers on iOS are restricted to system voices. For the best experience, download <strong>Siri</strong> or <strong>Enhanced</strong> voices in 
+                        <em> Settings → Accessibility → Spoken Content → Voices</em>.
+                      </p>
+                    </div>
+                  )}
+
                   <select 
                     value={selectedVoice?.name || ''} 
                     onChange={(e) => {
