@@ -119,7 +119,7 @@ const App: React.FC = () => {
 
   const {
     isPlaying, rate, setRate,
-    maxRateWarning, speak, pause, stop, preview,
+    maxRateWarning, speak, pause, stop, preview, refreshVoices,
     selectedVoice, setSelectedVoice, voices,
   } = useVoice();
 
@@ -1286,15 +1286,24 @@ const App: React.FC = () => {
                 <div className="settings-group">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                     <label className="settings-label" style={{ margin: 0 }}>Narrator Voice</label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={showOnlyPremium} 
-                        onChange={(e) => setShowOnlyPremium(e.target.checked)}
-                        style={{ accentColor: 'var(--accent)' }}
-                      />
-                      PREMIUM ONLY
-                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <button 
+                        onClick={refreshVoices}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700, padding: 0, textDecoration: 'underline' }}
+                        title="Force refresh system voices"
+                      >
+                        REFRESH
+                      </button>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={showOnlyPremium} 
+                          onChange={(e) => setShowOnlyPremium(e.target.checked)}
+                          style={{ accentColor: 'var(--accent)' }}
+                        />
+                        PREMIUM ONLY
+                      </label>
+                    </div>
                   </div>
                   
                   {/iPhone|iPad/.test(navigator.userAgent) && (

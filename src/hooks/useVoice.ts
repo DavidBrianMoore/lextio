@@ -66,10 +66,19 @@ export const useVoice = () => {
     updateVoices();
     
     // iOS voice loading quirk: voices often take a moment to populate
+    // We poll several times because the first 'success' might only be partial
+    let pollCount = 0;
     const timer = setInterval(() => {
+      pollCount++;
       const currentVoices = synth.getVoices();
+      
+      // If we see a significant jump in voice count or we've polled enough, update
       if (currentVoices.length > 0) {
         updateVoices();
+      }
+      
+      // Stop polling after 10 seconds (10 attempts)
+      if (pollCount >= 10) {
         clearInterval(timer);
       }
     }, 1000);
@@ -174,6 +183,17 @@ export const useVoice = () => {
     synth.speak(utterance);
   }, [synth, selectedVoice, rate, voices]);
 
+  const refreshVoices = useCallback(() => {
+    // Wake up the engine - some browsers hide the full voice list until first speak
+    const u = new SpeechSynthesisUtterance("");
+    u.volume = 0;
+    synth.speak(u);
+    setTimeout(() => {
+      updateVoices();
+      logger.info('Manual voice refresh triggered');
+    }, 100);
+  }, [synth, updateVoices]);
+
   return {
     voices,
     selectedVoice,
@@ -188,6 +208,7 @@ export const useVoice = () => {
     resume,
     stop,
     preview,
+    refreshVoices,
     currentTextIndex,
     setCurrentTextIndex
   };
