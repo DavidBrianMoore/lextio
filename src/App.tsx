@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, ChevronRight, RotateCcw, FastForward, Bookmark, Globe } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, ChevronRight, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, MoreVertical, Folder as FolderIcon, Trash2, FolderOpen } from 'lucide-react';
 import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +11,11 @@ interface BookmarkEntry {
   timestamp: number;
 }
 
+interface Folder {
+  id: string;
+  name: string;
+}
+
 interface LibraryEntry {
   id: string;
   title: string;
@@ -18,12 +23,17 @@ interface LibraryEntry {
   timestamp: number;
   bookmarks?: BookmarkEntry[];
   rate?: number;
+  folderId?: string;
 }
 
 const App: React.FC = () => {
   const [content, setContent] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | 'all' | 'uncategorized'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isParsing, setIsParsing] = useState(false);
+  const [parsingCount, setParsingCount] = useState(0);
   const [library, setLibrary] = useState<LibraryEntry[]>([]);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -51,7 +61,20 @@ const App: React.FC = () => {
   // Load library and settings from storage
   useEffect(() => {
     const savedLib = localStorage.getItem('voice-reader-library');
-    if (savedLib) setLibrary(JSON.parse(savedLib));
+    if (savedLib) {
+      try {
+        const parsed = JSON.parse(savedLib);
+        if (Array.isArray(parsed)) setLibrary(parsed);
+      } catch (e) { console.error('Failed to parse library', e); }
+    }
+    
+    const savedFolders = localStorage.getItem('voice-reader-folders');
+    if (savedFolders) {
+      try {
+        const parsed = JSON.parse(savedFolders);
+        if (Array.isArray(parsed)) setFolders(parsed);
+      } catch (e) { console.error('Failed to parse folders', e); }
+    }
     
     const savedSettings = localStorage.getItem('voice-reader-settings');
     if (savedSettings) {
@@ -146,30 +169,54 @@ const App: React.FC = () => {
   }, [activeSentenceIndex, sentences, isPlaying]); // eslint-disable-line
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
     setIsParsing(true);
-    setFileName(file.name);
-    try {
-      let text = '';
-      const name = file.name.toLowerCase();
-      if (name.endsWith('.pdf')) text = await parsePDF(file);
-      else if (name.endsWith('.docx')) text = await parseDOCX(file);
-      else if (name.endsWith('.epub')) text = await parseEPUB(file);
-      if (!text) throw new Error('No readable content found in file.');
-      setContent(text);
-      setActiveSentenceIndex(-1);
-      const entry: LibraryEntry = { id: Math.random().toString(36).slice(2), title: file.name, content: text, timestamp: Date.now() };
-      setLibrary(prev => {
-        const updated = [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 20);
-        localStorage.setItem('voice-reader-library', JSON.stringify(updated));
-        return updated;
-      });
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to parse file.');
-    } finally {
-      setIsParsing(false);
+    setParsingCount(files.length);
+    
+    for (const file of files) {
+      setFileName(file.name);
+      try {
+        let text = '';
+        const name = file.name.toLowerCase();
+        if (name.endsWith('.pdf')) text = await parsePDF(file);
+        else if (name.endsWith('.docx')) text = await parseDOCX(file);
+        else if (name.endsWith('.epub')) text = await parseEPUB(file);
+        
+        if (!text) continue;
+
+        const entry: LibraryEntry = { 
+          id: Math.random().toString(36).slice(2), 
+          title: file.name, 
+          content: text, 
+          timestamp: Date.now(),
+          folderId: selectedFolderId !== 'all' && selectedFolderId !== 'uncategorized' ? selectedFolderId : undefined
+        };
+
+        setLibrary(prev => {
+          const updated = [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 50);
+          localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+          return updated;
+        });
+
+        // Set as active if it's the only or last one
+        if (files.indexOf(file) === files.length - 1) {
+          setContent(text);
+          setActiveSentenceIndex(-1);
+        }
+      } catch (err) {
+        console.error(`Failed to parse ${file.name}:`, err);
+      } finally {
+        setParsingCount(prev => Math.max(0, prev - 1));
+      }
     }
+    setIsParsing(false);
+  };
+
+  const handleUrlLoad = () => {
+    const url = prompt('Enter document URL (PDF, EPUB, DOCX):');
+    if (url) processUrl(url);
   };
 
   const processUrl = async (url: string) => {
@@ -208,10 +255,67 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUrlLoad = async () => {
-    const url = prompt('Enter document URL (PDF, EPUB, DOCX):');
-    if (url) processUrl(url);
+  const createFolder = () => {
+    const name = prompt('Folder Name:');
+    if (!name) return;
+    const newFolder: Folder = { id: Math.random().toString(36).slice(2), name };
+    setFolders(prev => {
+      const updated = [...prev, newFolder];
+      localStorage.setItem('voice-reader-folders', JSON.stringify(updated));
+      return updated;
+    });
   };
+
+  const deleteFolder = (id: string) => {
+    if (!confirm('Delete this folder? (Books will be uncategorized)')) return;
+    setFolders(prev => {
+      const updated = prev.filter(f => f.id !== id);
+      localStorage.setItem('voice-reader-folders', JSON.stringify(updated));
+      return updated;
+    });
+    setLibrary(prev => {
+      const updated = prev.map(item => item.folderId === id ? { ...item, folderId: undefined } : item);
+      localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+      return updated;
+    });
+    if (selectedFolderId === id) setSelectedFolderId('all');
+  };
+
+  const moveToFolder = (itemId: string, folderId?: string) => {
+    setLibrary(prev => {
+      const updated = prev.map(item => item.id === itemId ? { ...item, folderId } : item);
+      localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const deleteLibraryItem = (id: string) => {
+    if (!confirm('Delete this book from your library?')) return;
+    setLibrary(prev => {
+      const updated = prev.filter(i => i.id !== id);
+      localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+      return updated;
+    });
+    if (currentBook?.id === id) {
+      setContent('');
+      setFileName('');
+    }
+  };
+
+  const filteredLibrary = useMemo(() => {
+    if (!Array.isArray(library)) return [];
+    return library.filter(item => {
+      if (!item || !item.title) return false;
+      const titleLower = item.title.toLowerCase();
+      const queryLower = searchQuery.toLowerCase();
+      const matchesSearch = titleLower.includes(queryLower);
+      const matchesFolder = 
+        selectedFolderId === 'all' || 
+        (selectedFolderId === 'uncategorized' && !item.folderId) ||
+        item.folderId === selectedFolderId;
+      return matchesSearch && matchesFolder;
+    });
+  }, [library, searchQuery, selectedFolderId]);
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -296,7 +400,9 @@ const App: React.FC = () => {
   const progress = sentences.length > 0 ? ((activeSentenceIndex + 1) / sentences.length) * 100 : 0;
   const waveHeights = [40, 70, 50, 90, 60, 80, 45, 75, 55, 85, 50, 70, 40, 65];
 
-  const currentBook = useMemo(() => library.find(b => b.title === fileName), [library, fileName]);
+  const currentBook = useMemo(() => 
+    Array.isArray(library) ? library.find(b => b.title === fileName) : undefined
+  , [library, fileName]);
   const isBookmarked = currentBook?.bookmarks?.some(b => b.index === activeSentenceIndex) || false;
 
   return (
@@ -347,9 +453,9 @@ const App: React.FC = () => {
           <button className="nav-btn" onClick={handleUrlLoad} title="Load from URL">
             <Globe size={16} />
           </button>
-          <input type="file" id="file-upload" style={{ display: 'none' }} accept=".pdf,.docx,.epub" onChange={handleFileUpload} />
+          <input type="file" id="file-upload" style={{ display: 'none' }} accept=".pdf,.docx,.epub" onChange={handleFileUpload} multiple />
           <label htmlFor="file-upload" className="nav-upload-label">
-            <span>{fileName ? 'Change' : 'Upload'}</span>
+            <span>{fileName ? 'Add More' : 'Upload'}</span>
           </label>
         </div>
       </nav>
@@ -359,7 +465,9 @@ const App: React.FC = () => {
         {isParsing ? (
           <div className="loading-state">
             <div className="spinner" />
-            <p className="loading-text">Initializing Narrative...</p>
+            <p className="loading-text">
+              {parsingCount > 0 ? `Parsing ${parsingCount} Narrative${parsingCount > 1 ? 's' : ''}...` : 'Initializing...'}
+            </p>
           </div>
         ) : content ? (
           <div className="animate-fade-in">
@@ -529,16 +637,62 @@ const App: React.FC = () => {
               transition={{ type: 'spring', damping: 28, stiffness: 260 }}
               className="library-panel glass"
             >
-              <h2 className="library-title">
-                <History size={22} style={{ color: 'var(--accent)' }} /> Library
-              </h2>
+              <div className="library-header">
+                <h2 className="library-title">
+                  <Library size={22} style={{ color: 'var(--accent)' }} /> Library
+                </h2>
+                <button className="create-folder-btn" onClick={createFolder} title="New Folder">
+                  <FolderPlus size={18} />
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="search-container">
+                <Search size={16} className="search-icon" />
+                <input 
+                  type="text" 
+                  placeholder="Search your collection..." 
+                  className="search-input"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Folders List */}
+              <div className="folders-section">
+                <div 
+                  className={`folder-chip ${selectedFolderId === 'all' ? 'active' : ''}`}
+                  onClick={() => setSelectedFolderId('all')}
+                >
+                  <History size={14} /> All
+                </div>
+                <div 
+                  className={`folder-chip ${selectedFolderId === 'uncategorized' ? 'active' : ''}`}
+                  onClick={() => setSelectedFolderId('uncategorized')}
+                >
+                  <FileText size={14} /> Unsorted
+                </div>
+                {folders.map(folder => (
+                  <div 
+                    key={folder.id} 
+                    className={`folder-chip ${selectedFolderId === folder.id ? 'active' : ''}`}
+                    onClick={() => setSelectedFolderId(folder.id)}
+                  >
+                    <FolderIcon size={14} /> {folder.name}
+                    <button className="folder-delete-btn" onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }}>
+                      <Trash2 size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               <div className="library-list">
-                {library.length === 0 ? (
-                  <p className="library-empty">Archive is empty</p>
-                ) : library.map(item => (
-                  <div key={item.id} style={{ marginBottom: '1rem' }}>
+                {filteredLibrary.length === 0 ? (
+                  <p className="library-empty">No narratives found</p>
+                ) : filteredLibrary.map(item => (
+                  <div key={item.id} className="library-item-group">
                     <div
-                      className="library-item"
+                      className={`library-item ${currentBook?.id === item.id ? 'active' : ''}`}
                       onClick={() => {
                         setContent(item.content);
                         setFileName(item.title);
@@ -549,12 +703,38 @@ const App: React.FC = () => {
                     >
                       <div className="library-item-info">
                         <FileText size={18} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <p className="library-item-title">{item.title}</p>
-                          <p className="library-item-date">{new Date(item.timestamp).toLocaleDateString()}</p>
+                          <p className="library-item-date">
+                            {new Date(item.timestamp).toLocaleDateString()}
+                            {item.folderId && folders.find(f => f.id === item.folderId) && (
+                              <span className="folder-tag">
+                                • {folders.find(f => f.id === item.folderId)?.name}
+                              </span>
+                            )}
+                          </p>
                         </div>
                       </div>
-                      <ChevronRight size={15} style={{ color: 'var(--text-dim)' }} />
+                      
+                      <div className="library-item-actions">
+                        <select 
+                          className="move-to-select"
+                          value={item.folderId || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => moveToFolder(item.id, e.target.value || undefined)}
+                        >
+                          <option value="">No Folder</option>
+                          {folders.map(f => (
+                            <option key={f.id} value={f.id}>{f.name}</option>
+                          ))}
+                        </select>
+                        <button 
+                          className="delete-item-btn" 
+                          onClick={(e) => { e.stopPropagation(); deleteLibraryItem(item.id); }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
 
                     {item.bookmarks && item.bookmarks.length > 0 && (

@@ -48,11 +48,20 @@ export const parseEPUB = async (file: File): Promise<string> => {
   const spine = book.spine as any;
   
   // Iterate through chapters
+  let i = 0;
   for (const item of spine.items) {
-    const chapter = await item.load(book.load.bind(book));
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(chapter as string, 'text/html');
-    fullText += doc.body.innerText + '\n';
+    try {
+      console.log(`Processing spine item ${i++}/${spine.items.length}: ${item.href}`);
+      const chapter = await item.load(book.load.bind(book));
+      if (!chapter) continue;
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(chapter as string, 'text/html');
+      const text = doc.body.innerText || '';
+      fullText += text + '\n';
+    } catch (err) {
+      console.warn(`Skipping spine item ${item.href} due to load error:`, err);
+    }
   }
   
   return fullText;
