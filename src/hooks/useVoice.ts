@@ -125,6 +125,8 @@ export const useVoice = () => {
       const currentVoiceInfo = voices.find(v => v.voice.name === selectedVoice.name);
       if (currentVoiceInfo && rate > currentVoiceInfo.maxRate) {
         setMaxRateWarning(`Warning: ${selectedVoice.name} typically supports up to ${currentVoiceInfo.maxRate}x speed.`);
+        const timer = setTimeout(() => setMaxRateWarning(null), 4000);
+        return () => clearTimeout(timer);
       } else {
         setMaxRateWarning(null);
       }
