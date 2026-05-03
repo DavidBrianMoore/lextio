@@ -503,7 +503,8 @@ body {
 .library-panel {
   position: fixed;
   right: 0; top: 0; bottom: 0;
-  width: 400px;
+  width: 600px;
+  max-width: 95vw;
   z-index: 2001;
   padding: 2.5rem;
   padding-top: 2rem;
@@ -511,7 +512,34 @@ body {
   flex-direction: column;
   border-left: 1px solid rgba(255,255,255,0.06);
   border-radius: 0;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.5);
+}
+
+.resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 2010;
+  transition: background 0.2s;
+}
+
+.resize-handle:hover {
+  background: rgba(129, 230, 217, 0.2);
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1px;
 }
 
 .library-panel.full-screen {

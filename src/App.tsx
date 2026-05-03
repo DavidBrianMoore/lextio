@@ -75,6 +75,7 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [libraryView, setLibraryView] = useState<'list' | 'grid' | 'compact'>('grid');
   const [isLibraryFull, setIsLibraryFull] = useState(false);
+  const [libraryWidth, setLibraryWidth] = useState(600);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const {
@@ -92,6 +93,25 @@ const App: React.FC = () => {
       document.exitFullscreen();
     }
   };
+
+  const handleResize = useCallback((e: MouseEvent) => {
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth > 300 && newWidth < 1200) {
+      setLibraryWidth(newWidth);
+    }
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    window.removeEventListener('mousemove', handleResize);
+    window.removeEventListener('mouseup', stopResizing);
+    document.body.style.cursor = 'default';
+  }, [handleResize]);
+
+  const startResizing = useCallback(() => {
+    window.addEventListener('mousemove', handleResize);
+    window.addEventListener('mouseup', stopResizing);
+    document.body.style.cursor = 'ew-resize';
+  }, [handleResize, stopResizing]);
 
   // Persist library and folders
   useEffect(() => {
@@ -753,11 +773,14 @@ const App: React.FC = () => {
             />
               <motion.div
                 initial={isLibraryFull ? { opacity: 0 } : { x: '100%' }} 
-                animate={isLibraryFull ? { x: 0, opacity: 1, width: '100%', maxWidth: '100%' } : { x: 0, width: '400px' }} 
+                animate={isLibraryFull ? { x: 0, opacity: 1, width: '100%', maxWidth: '100%' } : { x: 0, width: libraryWidth }} 
                 exit={isLibraryFull ? { opacity: 0 } : { x: '100%' }}
-                transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+                transition={isLibraryFull ? { type: 'spring', damping: 28, stiffness: 260 } : { type: 'tween', duration: 0.2 }}
                 className={`library-panel glass ${isLibraryFull ? 'full-screen' : ''}`}
               >
+                {!isLibraryFull && (
+                  <div className="resize-handle" onMouseDown={startResizing} />
+                )}
                 <div className="library-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <h2 className="library-title">
