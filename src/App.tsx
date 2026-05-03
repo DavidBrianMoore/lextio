@@ -4,6 +4,7 @@ import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PretextReader } from './components/PretextReader';
+import { initDebugApi } from './utils/debugApi';
 
 declare const __APP_VERSION__: string;
 
@@ -166,6 +167,17 @@ const App: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  // Initialize Debug API
+  useEffect(() => {
+    initDebugApi({
+      library,
+      setLibrary,
+      processUrl,
+      setContent,
+      setFileName
+    });
+  }, [library, setLibrary]); // Re-init when library changes to keep get() fresh
 
   // Preview voice/speed when paused; restart when playing
   useEffect(() => {
