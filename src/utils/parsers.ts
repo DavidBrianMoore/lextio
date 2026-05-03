@@ -66,32 +66,33 @@ export const parseEPUB = async (file: File): Promise<string> => {
   
   const textResults: string[] = [];
   
-  // Iterate through spine items sequentially to avoid memory spikes
+  // Iterate through spine items sequentially
   for (let i = 0; i < spine.items.length; i++) {
     const item = spine.items[i];
     try {
-      // Some items are images or other resources, we only want text
-      if (item.href.match(/\.(html|xhtml|htm|xml)/i)) {
-        // Load with a per-item timeout
-        const itemLoad = item.load(book.load.bind(book));
-        const itemTimeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Item timeout')), 5000)
-        );
-        
-        const chapter = await Promise.race([itemLoad, itemTimeout]) as string;
-        if (chapter) {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(chapter, 'text/html');
-          
-          // Better text extraction - remove scripts and styles first
-          const scripts = doc.querySelectorAll('script, style');
-          scripts.forEach(s => s.remove());
-          
-          const text = doc.body.innerText || doc.body.textContent || '';
-          const cleanedText = text.trim();
-          if (cleanedText.length > 20) { // Skip very small boilerplate items
-            textResults.push(cleanedText);
-          }
+      // Load with a per-item timeout
+      const itemLoad = item.load(book.load.bind(book));
+      const itemTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Item timeout')), 10000)
+      );
+      
+      const chapter = await Promise.race([itemLoad, itemTimeout]);
+      if (chapter) {
+        let text = '';
+        if (typeof chapter === 'string') {
+          const doc = new DOMParser().parseFromString(chapter, 'text/html');
+          const toRemove = doc.querySelectorAll('script, style, nav');
+          toRemove.forEach(s => s.remove());
+          text = doc.body.innerText || doc.body.textContent || '';
+        } else if (chapter instanceof Document) {
+          const toRemove = chapter.querySelectorAll('script, style, nav');
+          toRemove.forEach(s => s.remove());
+          text = chapter.body?.innerText || chapter.body?.textContent || chapter.documentElement.textContent || '';
+        }
+
+        const cleanedText = text.replace(/\s+/g, ' ').trim();
+        if (cleanedText.length > 5) { // Be very inclusive
+          textResults.push(cleanedText);
         }
       }
     } catch (err) {
