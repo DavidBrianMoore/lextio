@@ -280,6 +280,15 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [activeSentenceIndex, sentences, isPlaying]); // eslint-disable-line
 
+  const generateId = () => {
+    try {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+    } catch (e) {}
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -289,6 +298,11 @@ const App: React.FC = () => {
     
     for (const file of files) {
       try {
+        // Size check for mobile safety
+        if (file.size > 25 * 1024 * 1024) {
+          throw new Error('File is too large (max 25MB for mobile stability)');
+        }
+
         let parsed: { text: string; cover?: string };
         const name = file.name.toLowerCase();
         if (name.endsWith('.pdf')) parsed = await parsePDF(file);
@@ -299,7 +313,7 @@ const App: React.FC = () => {
         if (!parsed.text) continue;
 
         const entry: LibraryEntry = { 
-          id: crypto.randomUUID(), 
+          id: generateId(), 
           title: file.name, 
           content: parsed.text,
           cover: parsed.cover,
@@ -307,7 +321,17 @@ const App: React.FC = () => {
           folderId: selectedFolderId !== 'all' && selectedFolderId !== 'uncategorized' ? selectedFolderId : undefined
         };
 
-        setLibrary(prev => [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 50));
+        setLibrary(prev => {
+          const updated = [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 50);
+          try {
+            localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+          } catch (e) {
+            console.error('Storage full', e);
+            setNotification({ message: 'Library is full. Please delete some books.', type: 'error' });
+            return prev;
+          }
+          return updated;
+        });
         setNotification({ message: `Added "${file.name}" to library`, type: 'success' });
 
         // Only switch view if we don't have active content yet
@@ -343,6 +367,10 @@ const App: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch document.');
       const blob = await response.blob();
       
+      if (blob.size > 25 * 1024 * 1024) {
+        throw new Error('Remote file is too large (max 25MB)');
+      }
+
       let name = url.split('/').pop()?.split('?')[0] || 'remote-document.epub';
       if (!name.includes('.')) name += '.epub';
 
@@ -362,14 +390,25 @@ const App: React.FC = () => {
       setActiveSentenceIndex(-1);
 
       const entry: LibraryEntry = { 
-        id: crypto.randomUUID(), 
+        id: generateId(), 
         title: name, 
         content: parsed.text, 
         cover: parsed.cover,
-        timestamp: Date.now() 
+        timestamp: Date.now(),
+        folderId: selectedFolderId !== 'all' && selectedFolderId !== 'uncategorized' ? selectedFolderId : undefined
       };
 
-      setLibrary(prev => [entry, ...prev.filter(i => i.title !== name)].slice(0, 50));
+      setLibrary(prev => {
+        const updated = [entry, ...prev.filter(i => i.title !== name)].slice(0, 50);
+        try {
+          localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+        } catch (e) {
+          console.error('Storage full', e);
+          setNotification({ message: 'Library is full. Please delete some books.', type: 'error' });
+          return prev;
+        }
+        return updated;
+      });
       setNotification({ message: `Loaded "${name}" from URL`, type: 'success' });
     } catch (err) {
       console.error('URL Load error:', err);
