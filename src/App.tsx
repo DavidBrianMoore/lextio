@@ -208,6 +208,8 @@ const App: React.FC = () => {
   }, [showVoicePicker, selectedVoice]);
 
   const isFirstRender = useRef(true);
+  const lastRate = useRef(rate);
+  const lastVoiceName = useRef<string | undefined>(undefined);
 
   // iOS 18+ Background Audio Keep-Alive
   // This prevents the browser from killing speech synthesis when the screen locks
@@ -424,7 +426,22 @@ const App: React.FC = () => {
 
   // Preview voice/speed when paused; restart when playing
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (isFirstRender.current) { 
+      isFirstRender.current = false; 
+      lastRate.current = rate;
+      lastVoiceName.current = selectedVoice?.name;
+      return; 
+    }
+    
+    const rateChanged = Math.abs(lastRate.current - rate) > 0.01;
+    const voiceChanged = lastVoiceName.current !== selectedVoice?.name;
+    
+    // Only proceed if something actually changed
+    if (!rateChanged && !voiceChanged) return;
+    
+    lastRate.current = rate;
+    lastVoiceName.current = selectedVoice?.name;
+
     if (isPlaying && activeSentenceIndex >= 0) {
       const t = setTimeout(() => playFromIndex(activeSentenceIndex), 250);
       return () => clearTimeout(t);
