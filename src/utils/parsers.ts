@@ -14,6 +14,35 @@ export interface ParsedDocument {
   cover?: string;
 }
 
+/**
+ * Clean up text artifacts from PDF/EPUB extraction
+ * (Ligatures, split words, weird spacing)
+ */
+export const cleanupText = (text: string): string => {
+  return text
+    // Fix ligatures split by spaces (fi, fl, ff)
+    .replace(/(\w)f\s+i(\w)/g, '$1fi$2')
+    .replace(/(\w)f\s+l(\w)/g, '$1fl$2')
+    .replace(/(\w)f\s+f(\w)/g, '$1ff$2')
+    // Common split words
+    .replace(/\bTh\se\b/g, 'The')
+    .replace(/\ba\snd\b/g, 'and')
+    .replace(/\be\sxempli\s+fi\s+ed\b/g, 'exemplified')
+    // Handle general "f i" pattern at start of words too
+    .replace(/\bf\s+i(\w)/g, 'fi$1')
+    // Rejoin words split by line-end hyphens
+    .replace(/(\w)-\s+(\w)/g, '$1$2')
+    // Normalize spaces
+    .replace(/[ \t]+/g, ' ')
+    // Normalize newlines
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 export const parsePDF = async (file: File): Promise<ParsedDocument> => {
   logger.info(`parsePDF: reading arrayBuffer for ${file.name}`);
   try {
@@ -47,7 +76,7 @@ export const parsePDF = async (file: File): Promise<ParsedDocument> => {
       fullText += `\n\n[Note: Only first ${maxPages} of ${pdf.numPages} pages imported]`;
     }
     
-    return { text: fullText };
+    return { text: cleanupText(fullText) };
   } catch (error) {
     logger.error('PDF Parsing Error:', error);
     throw new Error(`Failed to parse PDF: ${error instanceof Error ? error.message : String(error)}`);
@@ -175,5 +204,5 @@ export const parseEPUB = async (file: File): Promise<ParsedDocument> => {
     throw err;
   }
   
-  return { text: fullText, cover: coverData };
+  return { text: cleanupText(fullText), cover: coverData };
 };
