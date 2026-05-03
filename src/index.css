@@ -363,23 +363,30 @@ body {
   color: rgba(255,255,255,0.3);
 }
 
-.voice-pill {
+.voice-box {
   display: flex;
   align-items: center;
-  gap: 8px;
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
-  padding: 6px 14px;
-  border-radius: 100px;
+  padding: 4px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
-  max-width: 140px;
+  min-width: 110px;
 }
 
-.voice-pill:hover {
-  background: rgba(255,255,255,0.1);
+.voice-box:hover, .voice-box.active {
+  background: rgba(255,255,255,0.08);
   border-color: var(--accent);
+}
+
+.voice-box-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  width: 100%;
 }
 
 .voice-name-label {
@@ -389,6 +396,17 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+}
+
+.dropdown-arrow {
+  color: rgba(255,255,255,0.3);
+  transition: transform 0.2s;
+}
+
+.voice-box.active .dropdown-arrow {
+  transform: rotate(180deg);
+  color: var(--accent);
 }
 
 /* Center */

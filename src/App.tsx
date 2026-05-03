@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   FileText, Plus, Search, Library, Trash2, CheckSquare, Square, 
-  Settings, Volume2, SkipBack, SkipForward, Play, Pause, X, Globe,
+  Settings, Volume2, SkipBack, SkipForward, Play, Pause, X, Globe, ChevronDown,
   LayoutGrid, List, AlignJustify, Maximize2, Minimize2, FolderPlus, Folder as FolderIcon,
   RotateCcw, FastForward, Bookmark, History, Shuffle, ClipboardCheck
 } from 'lucide-react';
@@ -840,18 +840,21 @@ const App: React.FC = () => {
               <span className="vol-label">100%</span>
             </div>
             <div 
-              className={`voice-pill${showVoicePicker ? ' active' : ''}`}
+              className={`voice-box${showVoicePicker ? ' active' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
                 setShowVoicePicker(!showVoicePicker);
               }}
-              title="Change Voice"
+              title="Select Voice"
               style={{ position: 'relative' }}
             >
-              <Globe size={14} style={{ color: 'var(--accent)' }} />
-              <span className="voice-name-label">
-                {selectedVoice?.name.split(' ')[0] || 'Narrator'}
-              </span>
+              <div className="voice-box-content">
+                <Globe size={14} style={{ color: 'var(--accent)' }} />
+                <span className="voice-name-label">
+                  {selectedVoice?.name.split(' ')[0] || 'Narrator'}
+                </span>
+                <ChevronDown size={12} className="dropdown-arrow" />
+              </div>
               
               <AnimatePresence>
                 {showVoicePicker && (
