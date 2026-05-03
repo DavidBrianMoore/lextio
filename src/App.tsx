@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2, LayoutGrid, List, Minimize2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2, LayoutGrid, List, Minimize2, Plus } from 'lucide-react';
 import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -725,6 +725,21 @@ const App: React.FC = () => {
                     <Library size={22} style={{ color: 'var(--accent)' }} /> Library
                   </h2>
                   <div className="library-controls">
+                    <button 
+                      className="control-icon-btn highlight" 
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                      title="Import Document"
+                    >
+                      <Plus size={18} />
+                    </button>
+                    <button 
+                      className="control-icon-btn highlight" 
+                      onClick={handleUrlLoad}
+                      title="Import from URL"
+                    >
+                      <Globe size={18} />
+                    </button>
+                    <div className="v-divider" />
                     <button 
                       className={`control-icon-btn ${libraryView === 'grid' ? 'active' : ''}`} 
                       onClick={() => setLibraryView('grid')}

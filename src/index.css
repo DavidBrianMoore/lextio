@@ -552,6 +552,10 @@ body {
   color: #fff;
 }
 
+.control-icon-btn.highlight {
+  color: var(--accent);
+}
+
 .control-icon-btn.active {
   background: rgba(129, 230, 217, 0.1);
   color: var(--accent);
