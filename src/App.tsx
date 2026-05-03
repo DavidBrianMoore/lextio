@@ -1315,12 +1315,13 @@ const App: React.FC = () => {
                     }}>
                       <div className="pro-tip" style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#60a5fa', fontWeight: 700, fontSize: '0.7rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          <Volume2 size={14} /> iOS 18 Pro Tip
+                          <Volume2 size={14} /> iOS 18+ Voice Note
                         </div>
                         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, margin: 0 }}>
-                          For Siri or Enhanced voices, ensure they are fully downloaded in <strong>Settings → Accessibility → Read & Speak → Voices</strong>. 
-                          Tap the voice name and make sure the <strong>Cloud icon</strong> is gone and the voice is tested. 
-                          If they still don't show, try the <strong>REFRESH</strong> button above.
+                          <strong>Important:</strong> Apple restricts "Siri" and "Enhanced" voices to system apps only. They are usually blocked for web browsers (Safari, Chrome, Edge).
+                          <br /><br />
+                          Lextio automatically selects the highest quality voices allowed by your phone (like <strong>Rishi ✨</strong> or <strong>Tessa ✨</strong>). 
+                          If the Narrator list is empty, tap <strong>REFRESH</strong> or ensure you are not in "Lockdown Mode."
                         </p>
                       </div>
                     </div>

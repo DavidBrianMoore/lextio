@@ -30,7 +30,9 @@ export const useVoice = () => {
                         v.name.includes('Enhanced') || 
                         v.name.includes('Siri') || 
                         v.name.includes('Premium') ||
-                        v.name.includes('Neural');
+                        v.name.includes('Neural') ||
+                        v.name.includes('Personal Voice') ||
+                        ['Rishi', 'Tessa', 'Karen', 'Daniel', 'Moira', 'Alex'].includes(v.name);
       
       return {
         voice: v,
