@@ -35,6 +35,7 @@ interface LibraryEntry {
   rate?: number;
   folderId?: string;
   cover?: string;
+  lastIndex?: number;
 }
 
 const App: React.FC = () => {
@@ -361,13 +362,16 @@ const App: React.FC = () => {
     }));
   }, [readerFontSize, readerFontFamily]);
 
-  // Persist session position and update library-wide rate
+  // Persist session position and update library-wide rate/index
   useEffect(() => {
     if (content && fileName) {
       setLibrary(prev => {
         const item = prev.find(b => b.title === fileName);
-        if (item && item.rate !== rate) {
-          const updated = prev.map(b => b.title === fileName ? { ...b, rate } : b);
+        if (item && (item.rate !== rate || item.lastIndex !== activeSentenceIndex)) {
+          const updated = prev.map(b => b.title === fileName 
+            ? { ...b, rate, lastIndex: activeSentenceIndex >= 0 ? activeSentenceIndex : b.lastIndex } 
+            : b
+          );
           localStorage.setItem('voice-reader-library', JSON.stringify(updated));
           return updated;
         }
@@ -463,6 +467,38 @@ const App: React.FC = () => {
       return [content || ''];
     }
   }, [content, fileName]);
+  
+  // Chapter detection
+  const chapters = useMemo(() => {
+    const list: { title: string, index: number }[] = [];
+    if (!sentences.length) return list;
+
+    sentences.forEach((s, i) => {
+      const clean = s.replace(/ ¶$/, '').trim();
+      if (!clean) return;
+
+      // Common patterns for chapters/headings
+      const isChapterPattern = /^(chapter|section|part|book|prologue|epilogue|introduction)\s+\d+|^(chapter|section|part|book|prologue|epilogue|introduction)$/i.test(clean);
+      const isShortAllCaps = clean.length < 50 && /^[A-Z\s\d\W]+$/.test(clean) && !/[a-z]/.test(clean);
+      const isRomanNumeral = /^[IVXLCDM]+\.?(\s|$)/.test(clean) && clean.length < 40;
+
+      if (isChapterPattern || isShortAllCaps || isRomanNumeral) {
+        // Avoid adding duplicate titles close to each other
+        if (list.length === 0 || (i - list[list.length - 1].index > 5)) {
+          list.push({ title: clean, index: i });
+        }
+      }
+    });
+
+    // If no chapters found, add at least the title if it exists
+    if (list.length === 0 && sentences.length > 0) {
+      list.push({ title: "Start of Document", index: 0 });
+    }
+    
+    return list;
+  }, [sentences]);
+
+  const [showChapters, setShowChapters] = useState(false);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -1095,13 +1131,54 @@ const App: React.FC = () => {
               </button>
             </div>
             <div className="extra-icons">
-              <button 
-                className={`btn-icon-small${isBookmarked ? ' active' : ''}`} 
-                onClick={toggleBookmark}
-                title={isBookmarked ? "Remove Bookmark" : "Add Bookmark"}
-              >
-                <Bookmark size={14} fill={isBookmarked ? "currentColor" : "none"} />
-              </button>
+                <button 
+                  className={`btn-icon-small${isBookmarked ? ' active' : ''}`} 
+                  onClick={toggleBookmark}
+                  title={isBookmarked ? "Remove Bookmark" : "Add Bookmark"}
+                >
+                  <Bookmark size={14} fill={isBookmarked ? "currentColor" : "none"} />
+                </button>
+
+                <div style={{ position: 'relative' }}>
+                  <button 
+                    className={`btn-icon-small${showChapters ? ' active' : ''}`} 
+                    onClick={() => setShowChapters(!showChapters)}
+                    title="Chapters & Navigation"
+                  >
+                    <List size={14} />
+                  </button>
+
+                  <AnimatePresence>
+                    {showChapters && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="chapters-menu glass"
+                      >
+                        <div className="chapters-header">Navigation</div>
+                        <div className="chapters-list">
+                          {chapters.length > 0 ? chapters.map((chap, idx) => (
+                            <div 
+                              key={`${chap.index}-${idx}`}
+                              className={`chapter-item ${activeSentenceIndex >= chap.index && (idx === chapters.length - 1 || activeSentenceIndex < chapters[idx+1].index) ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playFromIndex(chap.index);
+                                setShowChapters(false);
+                              }}
+                            >
+                              <span className="chapter-title">{chap.title}</span>
+                              <span className="chapter-pos">{Math.round((chap.index / Math.max(1, sentences.length)) * 100)}%</span>
+                            </div>
+                          )) : (
+                            <div className="chapter-empty">No chapters detected</div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               <button 
                 className={`btn-icon-small${focusMode ? ' active' : ''}`} 
                 onClick={() => setFocusMode(!focusMode)}
@@ -1345,11 +1422,16 @@ const App: React.FC = () => {
                           } else if (selectedIds.size > 0) {
                             toggleSelect(item.id, true);
                           } else {
+                            const targetIndex = item.lastIndex || 0;
                             setContent(item.content);
                             setFileName(item.title);
-                            setActiveSentenceIndex(-1);
                             if (item.rate) setRate(item.rate);
                             setShowLibrary(false);
+                            
+                            // Delayed play to ensure content state is applied and sentences useMemo updates
+                            setTimeout(() => {
+                              playFromIndex(targetIndex);
+                            }, 50);
                           }
                         }}
                       >
