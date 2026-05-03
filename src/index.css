@@ -727,7 +727,7 @@ body {
 .library-panel {
   position: fixed;
   right: 0; top: 0; bottom: 0;
-  width: 600px;
+  width: 900px;
   max-width: 95vw;
   z-index: 2001;
   padding: 2.5rem;

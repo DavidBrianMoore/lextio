@@ -124,9 +124,9 @@ const App: React.FC = () => {
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(-1);
   const [furthestIndex, setFurthestIndex] = useState(0);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-  const [libraryView, setLibraryView] = useState<'list' | 'grid' | 'compact'>('grid');
+  const [libraryView, setLibraryView] = useState<'list' | 'grid' | 'compact'>('compact');
   const [isLibraryFull, setIsLibraryFull] = useState(false);
-  const [libraryWidth, setLibraryWidth] = useState(600);
+  const [libraryWidth, setLibraryWidth] = useState(900);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set(['US']));
 
