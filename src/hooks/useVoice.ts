@@ -6,6 +6,7 @@ export interface FormattedVoice {
   name: string;
   lang: string;
   maxRate: number;
+  isPremium: boolean;
 }
 
 export const useVoice = () => {
@@ -28,14 +29,16 @@ export const useVoice = () => {
       const isPremium = v.name.includes('Natural') || 
                         v.name.includes('Enhanced') || 
                         v.name.includes('Siri') || 
-                        v.name.includes('Premium');
+                        v.name.includes('Premium') ||
+                        v.name.includes('Neural');
       
       return {
         voice: v,
         name: v.name,
         lang: v.lang,
         // Premium voices usually have a lower max rate before sounding 'choppy' or failing.
-        maxRate: isPremium ? 2.0 : 4.0
+        maxRate: isPremium ? 2.0 : 4.0,
+        isPremium
       };
     });
 

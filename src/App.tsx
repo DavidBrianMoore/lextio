@@ -68,6 +68,17 @@ const App: React.FC = () => {
     return 'center';
   });
 
+  const [showOnlyPremium, setShowOnlyPremium] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('voice-reader-settings');
+      if (saved) {
+        const { showOnlyPremium: savedVal } = JSON.parse(saved);
+        return savedVal ?? true;
+      }
+    } catch (e) {}
+    return true;
+  });
+
   const [readerFontSize, setReaderFontSize] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('voice-reader-reader-settings');
@@ -111,6 +122,13 @@ const App: React.FC = () => {
     maxRateWarning, speak, pause, stop, preview,
     selectedVoice, setSelectedVoice, voices,
   } = useVoice();
+
+  const filteredVoices = useMemo(() => {
+    if (showOnlyPremium) {
+      return voices.filter(v => v.isPremium);
+    }
+    return voices;
+  }, [voices, showOnlyPremium]);
 
   const isFirstRender = useRef(true);
 
@@ -232,8 +250,8 @@ const App: React.FC = () => {
   // Persist settings
   useEffect(() => {
     if (isFirstRender.current) return;
-    localStorage.setItem('voice-reader-settings', JSON.stringify({ scrollMode }));
-  }, [scrollMode]);
+    localStorage.setItem('voice-reader-settings', JSON.stringify({ scrollMode, showOnlyPremium }));
+  }, [scrollMode, showOnlyPremium]);
 
   useEffect(() => {
     if (isFirstRender.current) return;
@@ -1266,7 +1284,18 @@ const App: React.FC = () => {
                 
                 {/* Voice Selection */}
                 <div className="settings-group">
-                  <label className="settings-label">Narrator Voice</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <label className="settings-label" style={{ margin: 0 }}>Narrator Voice</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={showOnlyPremium} 
+                        onChange={(e) => setShowOnlyPremium(e.target.checked)}
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      PREMIUM ONLY
+                    </label>
+                  </div>
                   
                   {/iPhone|iPad/.test(navigator.userAgent) && (
                     <div style={{
@@ -1305,8 +1334,10 @@ const App: React.FC = () => {
                       fontFamily: 'inherit'
                     }}
                   >
-                    {voices.map(v => (
-                      <option key={v.name} value={v.name} style={{ background: '#1a1d21' }}>{v.name}</option>
+                    {filteredVoices.map(v => (
+                      <option key={v.name} value={v.name} style={{ background: '#1a1d21' }}>
+                        {v.isPremium ? '✨ ' : ''}{v.name}
+                      </option>
                     ))}
                   </select>
                 </div>
