@@ -150,9 +150,16 @@ export const useVoice = () => {
     const utterance = new SpeechSynthesisUtterance(text);
     if (selectedVoice) utterance.voice = selectedVoice;
     
+    // iOS 18+ speed calibration
+    // Apple's speech engine is significantly faster at the same 'rate' than PC/Android.
+    // We apply a 0.88x calibration factor on iOS to normalize the 'feel' of the speed.
+    const isIOS = /iPhone|iPad/.test(navigator.userAgent);
+    const calibrationFactor = isIOS ? 0.88 : 1.0;
+
     // Apply rate capping if needed for the utterance itself
     const voiceInfo = voices.find(v => v.voice.name === selectedVoice?.name);
-    utterance.rate = voiceInfo ? Math.min(rate, voiceInfo.maxRate) : rate;
+    const baseRate = voiceInfo ? Math.min(rate, voiceInfo.maxRate) : rate;
+    utterance.rate = baseRate * calibrationFactor;
     
     utterance.onstart = () => setIsPlaying(true);
     utterance.onend = () => {
@@ -191,9 +198,14 @@ export const useVoice = () => {
   const preview = useCallback(() => {
     synth.cancel();
     const voiceInfo = voices.find(v => v.voice.name === selectedVoice?.name);
-    const effectiveRate = voiceInfo ? Math.min(rate, voiceInfo.maxRate) : rate;
+    const baseRate = voiceInfo ? Math.min(rate, voiceInfo.maxRate) : rate;
     
-    const utterance = new SpeechSynthesisUtterance(`Voice preview at ${effectiveRate.toFixed(1)} speed`);
+    // iOS Speed Calibration
+    const isIOS = /iPhone|iPad/.test(navigator.userAgent);
+    const calibrationFactor = isIOS ? 0.88 : 1.0;
+    const effectiveRate = baseRate * calibrationFactor;
+    
+    const utterance = new SpeechSynthesisUtterance(`Voice preview at ${rate.toFixed(1)} speed`);
     if (selectedVoice) utterance.voice = selectedVoice;
     utterance.rate = effectiveRate;
     synth.speak(utterance);
