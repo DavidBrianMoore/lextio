@@ -359,7 +359,53 @@ const App: React.FC = () => {
   };
 
   const deleteLibraryItem = (id: string) => {
+    if (confirm('Delete this from library?')) {
+      setLibrary(prev => prev.filter(i => i.id !== id));
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
+  };
+
+  const toggleSelect = (id: string, isMulti: boolean) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (isMulti) {
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+      } else {
+        if (next.has(id) && next.size === 1) next.clear();
+        else {
+          next.clear();
+          next.add(id);
+        }
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selectedIds.size === filteredLibrary.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredLibrary.map(i => i.id)));
+    }
+  };
+
+  const deleteSelected = () => {
+    if (confirm(`Delete ${selectedIds.size} items?`)) {
+      setLibrary(prev => prev.filter(i => !selectedIds.has(i.id)));
+      setSelectedIds(new Set());
+    }
+  };
+
+  const moveSelected = (folderId?: string) => {
+    setLibrary(prev => prev.map(item => 
+      selectedIds.has(item.id) ? { ...item, folderId } : item
+    ));
+    setSelectedIds(new Set());
   };
 
   const filteredLibrary = useMemo(() => {
