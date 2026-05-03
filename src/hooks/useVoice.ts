@@ -12,6 +12,12 @@ export interface FormattedVoice {
 export const useVoice = () => {
   const [voices, setVoices] = useState<FormattedVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
+  useEffect(() => {
+    selectedVoiceRef.current = selectedVoice;
+  }, [selectedVoice]);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const [maxRateWarning, setMaxRateWarning] = useState<string | null>(null);
@@ -46,22 +52,30 @@ export const useVoice = () => {
 
     setVoices(formattedVoices);
     
-    // Default to high-quality American English
-    let preferred = availableVoices.find(v => v.lang === 'en-US' && (v.name.includes('Natural') || v.name.includes('Enhanced')));
+    // Preserve current selection by name if possible, otherwise use preference logic
+    const currentName = selectedVoiceRef.current?.name;
+    const stillAvailable = availableVoices.find(v => v.name === currentName);
     
-    if (!preferred && isApple) {
-      preferred = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Siri')) ||
-                  availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Samantha (Enhanced)')) ||
-                  availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Alex'));
-    }
+    if (stillAvailable) {
+      setSelectedVoice(stillAvailable);
+    } else if (!selectedVoiceRef.current) {
+      // Default to high-quality American English
+      let preferred = availableVoices.find(v => v.lang === 'en-US' && (v.name.includes('Natural') || v.name.includes('Enhanced')));
+      
+      if (!preferred && isApple) {
+        preferred = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Siri')) ||
+                    availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Samantha (Enhanced)')) ||
+                    availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Alex'));
+      }
 
-    if (!preferred) {
-      preferred = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
-                  availableVoices.find(v => v.lang === 'en-US') ||
-                  availableVoices[0];
+      if (!preferred) {
+        preferred = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
+                    availableVoices.find(v => v.lang === 'en-US') ||
+                    availableVoices[0];
+      }
+                         
+      if (preferred) setSelectedVoice(preferred);
     }
-                       
-    if (preferred) setSelectedVoice(preferred);
   }, [synth]);
 
   useEffect(() => {
