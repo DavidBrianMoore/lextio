@@ -1282,9 +1282,11 @@ body {
   }
 
   .control-main-row {
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
     align-items: center;
+    justify-content: center;
   }
 
   /* Hide volume pill on mobile to save space, but keep the Voice Box */
@@ -1295,15 +1297,17 @@ body {
   .control-left {
     display: flex;
     justify-content: center;
-    width: 100%;
-    margin-bottom: 0.25rem;
+    width: auto;
+    margin-bottom: 0;
+    order: 2;
   }
 
-  /* Center the playback buttons */
+  /* Center the playback buttons and force them to their own top row */
   .play-controls {
     gap: 1rem;
     justify-content: center;
     width: 100%;
+    order: 1;
   }
 
   .play-button {
@@ -1311,12 +1315,13 @@ body {
     height: 50px;
   }
 
-  /* Put speed + extras in a row below */
+  /* Share the bottom row with the voice box */
   .control-right {
     flex: unset;
-    width: 100%;
+    width: auto;
     justify-content: center;
     gap: 1rem;
+    order: 3;
   }
 
   .speed-section {
