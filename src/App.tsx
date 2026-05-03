@@ -151,7 +151,6 @@ const App: React.FC = () => {
     document.body.style.cursor = 'ew-resize';
   }, [handleResize, stopResizing]);
 
-  // Persist library and folders
   useEffect(() => {
     try {
       localStorage.setItem('voice-reader-library', JSON.stringify(library));
@@ -236,8 +235,11 @@ const App: React.FC = () => {
     }
   }, [notification]);
 
-  // Initialize Debug API
+  // Initialize Global Error Handlers and debug API
   useEffect(() => {
+    if (isFirstRender.current) {
+      logger.initGlobalHandlers();
+    }
     initDebugApi({ 
       library, 
       setLibrary, 
@@ -251,7 +253,7 @@ const App: React.FC = () => {
       deleteSelected,
       selectAll
     });
-  }, [library, setLibrary]); // Re-init when library changes to keep get() fresh
+  }, [library, setLibrary]); 
 
   // Preview voice/speed when paused; restart when playing
   useEffect(() => {
@@ -352,26 +354,32 @@ const App: React.FC = () => {
           folderId: selectedFolderId !== 'all' && selectedFolderId !== 'uncategorized' ? selectedFolderId : undefined
         };
 
+        logger.info(`Updating library state for ${file.name}...`);
         setLibrary(prev => {
           const updated = [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 50);
           try {
+            logger.info(`Saving library to localStorage (${updated.length} items)...`);
             localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+            logger.info('Library saved successfully.');
           } catch (e) {
-            logger.error('Storage full', e);
-            setNotification({ message: 'Library is full. Please delete some books.', type: 'error' });
+            logger.error('Storage full or failed', e);
+            setNotification({ message: 'Library storage issue. Try deleting some books.', type: 'error' });
             return prev;
           }
           return updated;
         });
 
+        logger.info(`Updating content state...`);
         // Only switch view if we don't have active content yet
         setContent(prev => {
           if (!prev) {
+            logger.info(`Switching to new document: ${file.name}`);
             setFileName(file.name);
             setActiveSentenceIndex(-1);
             setNotification({ message: `Added "${file.name}" to library`, type: 'success' });
             return parsed.text;
           }
+          logger.info('Content already exists, added to library in background.');
           return prev;
         });
       } catch (err) {

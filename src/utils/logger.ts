@@ -1,3 +1,5 @@
+declare const __APP_VERSION__: string;
+
 type LogType = 'error' | 'warn' | 'info';
 
 interface LogEntry {
@@ -48,7 +50,7 @@ export const logger = {
   getDebugReport: () => {
     const logs = logger.getLogs();
     const report = {
-      version: '1.0.30',
+      version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.33',
       device: {
         userAgent: navigator.userAgent,
         language: navigator.language,
@@ -60,5 +62,23 @@ export const logger = {
     return JSON.stringify(report, null, 2);
   },
   
-  clear: () => localStorage.removeItem('lextio-debug-logs')
+  clear: () => localStorage.removeItem('lextio-debug-logs'),
+  
+  initGlobalHandlers: () => {
+    window.addEventListener('unhandledrejection', (event) => {
+      logger.error('Unhandled Promise Rejection', { 
+        reason: event.reason,
+        promise: event.promise 
+      });
+    });
+    window.addEventListener('error', (event) => {
+      logger.error('Global Error', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error
+      });
+    });
+  }
 };
