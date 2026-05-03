@@ -123,12 +123,16 @@ export const parsePDF = async (file: File): Promise<ParsedDocument> => {
         else if (lastX !== -1) {
           const gap = x - (lastX + lastWidth);
           const fontSize = Math.abs(item.transform[0]);
-          // If gap is significant, insert spaces proportional to the gap size.
-          // This allows us to distinguish between kerning/letter-spacing (1 space)
-          // and actual word boundaries (2+ spaces).
-          if (gap > fontSize * 0.15) {
-             const spaces = Math.max(1, Math.round(gap / (fontSize * 0.2)));
-             pageText += ' '.repeat(spaces);
+          
+          if (fontSize > 0 && gap > fontSize * 0.15) {
+             // Cap spaces at 10 to prevent RangeError on malformed PDFs
+             const spaces = Math.min(10, Math.max(1, Math.round(gap / (fontSize * 0.2))));
+             if (Number.isFinite(spaces)) {
+               pageText += ' '.repeat(spaces);
+             }
+          } else if (fontSize === 0 && gap > 5) {
+             // Fallback for invisible/malformed text with physical gaps
+             pageText += ' ';
           }
         }
 
