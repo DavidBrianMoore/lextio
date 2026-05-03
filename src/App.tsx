@@ -132,6 +132,7 @@ const App: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set(['US']));
   const [librarySort, setLibrarySort] = useState<'newest' | 'oldest' | 'alpha'>('newest');
+  const [pendingPlayIndex, setPendingPlayIndex] = useState<number | null>(null);
 
   const {
     isPlaying, rate, setRate,
@@ -449,6 +450,16 @@ const App: React.FC = () => {
       preview();
     }
   }, [rate, selectedVoice]); // eslint-disable-line
+
+  // Handle pending play when content/sentences change
+  useEffect(() => {
+    if (pendingPlayIndex !== null && sentences.length > 0) {
+      // Ensure we have a valid index for the NEW sentences
+      const targetIndex = Math.min(pendingPlayIndex, sentences.length - 1);
+      playFromIndex(targetIndex);
+      setPendingPlayIndex(null);
+    }
+  }, [sentences, pendingPlayIndex]); // eslint-disable-line
 
   // Split content into sentences
   const sentences = useMemo(() => {
@@ -1440,15 +1451,14 @@ const App: React.FC = () => {
                             toggleSelect(item.id, true);
                           } else {
                             const targetIndex = item.lastIndex || 0;
+                            stop(); // Stop previous playback immediately
                             setContent(item.content);
                             setFileName(item.title);
                             if (item.rate) setRate(item.rate);
                             setShowLibrary(false);
                             
-                            // Delayed play to ensure content state is applied and sentences useMemo updates
-                            setTimeout(() => {
-                              playFromIndex(targetIndex);
-                            }, 50);
+                            // Queue playback for when sentences useMemo updates
+                            setPendingPlayIndex(targetIndex);
                           }
                         }}
                       >
