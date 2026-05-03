@@ -34,8 +34,9 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
   // First sentence is always the document title
   const [title, ...body] = sentences;
 
-  // Windowed rendering to avoid DOM overload
-  const WINDOW_SIZE = 100;
+  // Windowed rendering to avoid DOM overload. 
+  // We use a larger window (1000) to ensure fast scrolling doesn't "outrun" the text buffer.
+  const WINDOW_SIZE = 1000;
   const halfWindow = Math.floor(WINDOW_SIZE / 2);
   
   // Calculate window range around active sentence (offset by 1 because body starts at index 1)
@@ -47,10 +48,11 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
   if (endIdx === body.length) {
     startIdx = Math.max(0, endIdx - WINDOW_SIZE);
   }
-
+ 
   const visibleBody = body.slice(startIdx, endIdx);
-  const topSpacerHeight = startIdx * 60; // Estimated height per sentence
-  const bottomSpacerHeight = (body.length - endIdx) * 60;
+  // Using 80px as a safer average height estimate for sentences + padding
+  const topSpacerHeight = startIdx * 80; 
+  const bottomSpacerHeight = (body.length - endIdx) * 80;
 
   return (
     <div className="pretext-reader-root" style={{ fontSize: `${fontSize}rem`, fontFamily }}>
