@@ -906,9 +906,19 @@ const App: React.FC = () => {
                   <div className="resize-handle" onMouseDown={startResizing} />
                 )}
                 <div className="library-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <h2 className="library-title">
-                      <Library size={22} style={{ color: 'var(--accent)' }} /> Library
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                    <div className="nav-logo" onClick={goHome} style={{ cursor: 'pointer', transform: 'scale(0.8)', transformOrigin: 'left center' }} title="Go to Home">
+                      <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
+                      <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
+                      <div className="nav-logo-bar" style={{ height: 26 }} />
+                      <span className="nav-logo-title">LEXTIO</span>
+                      <div className="nav-logo-bar" style={{ height: 26 }} />
+                      <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
+                      <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
+                    </div>
+                    <div className="v-divider" />
+                    <h2 className="library-title" style={{ margin: 0 }}>
+                      <Library size={18} style={{ color: 'var(--accent)' }} /> Library
                     </h2>
                     <button 
                       className={`select-all-btn ${selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? 'active' : ''}`}
@@ -1186,9 +1196,26 @@ const App: React.FC = () => {
               transition={{ type: 'spring', damping: 28, stiffness: 260 }}
               className="library-panel glass"
             >
-              <h2 className="library-title">
-                <Settings size={22} style={{ color: 'var(--accent)' }} /> Settings
-              </h2>
+              <div className="library-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                  <div className="nav-logo" onClick={goHome} style={{ cursor: 'pointer', transform: 'scale(0.8)', transformOrigin: 'left center' }} title="Go to Home">
+                    <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
+                    <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
+                    <div className="nav-logo-bar" style={{ height: 26 }} />
+                    <span className="nav-logo-title">LEXTIO</span>
+                    <div className="nav-logo-bar" style={{ height: 26 }} />
+                    <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
+                    <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
+                  </div>
+                  <div className="v-divider" />
+                  <h2 className="library-title" style={{ margin: 0 }}>
+                    <Settings size={18} style={{ color: 'var(--accent)' }} /> Settings
+                  </h2>
+                </div>
+                <button className="control-icon-btn" onClick={() => setShowSettings(false)} title="Close">
+                  <X size={18} />
+                </button>
+              </div>
               
               <div className="settings-list">
                 
