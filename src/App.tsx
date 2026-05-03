@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2, LayoutGrid, List, Minimize2 } from 'lucide-react';
 import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +26,7 @@ interface LibraryEntry {
   bookmarks?: BookmarkEntry[];
   rate?: number;
   folderId?: string;
+  cover?: string;
 }
 
 const App: React.FC = () => {
@@ -71,6 +72,8 @@ const App: React.FC = () => {
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(-1);
   const [furthestIndex, setFurthestIndex] = useState(0);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [libraryView, setLibraryView] = useState<'list' | 'grid'>('grid');
+  const [isLibraryFull, setIsLibraryFull] = useState(false);
 
   const {
     isPlaying, rate, setRate,
@@ -216,18 +219,20 @@ const App: React.FC = () => {
     
     for (const file of files) {
       try {
-        let text = '';
+        let parsed: { text: string; cover?: string };
         const name = file.name.toLowerCase();
-        if (name.endsWith('.pdf')) text = await parsePDF(file);
-        else if (name.endsWith('.docx')) text = await parseDOCX(file);
-        else if (name.endsWith('.epub')) text = await parseEPUB(file);
+        if (name.endsWith('.pdf')) parsed = await parsePDF(file);
+        else if (name.endsWith('.docx')) parsed = await parseDOCX(file);
+        else if (name.endsWith('.epub')) parsed = await parseEPUB(file);
+        else continue;
         
-        if (!text) continue;
+        if (!parsed.text) continue;
 
         const entry: LibraryEntry = { 
-          id: Math.random().toString(36).slice(2), 
+          id: crypto.randomUUID(), 
           title: file.name, 
-          content: text, 
+          content: parsed.text,
+          cover: parsed.cover,
           timestamp: Date.now(),
           folderId: selectedFolderId !== 'all' && selectedFolderId !== 'uncategorized' ? selectedFolderId : undefined
         };
@@ -240,7 +245,7 @@ const App: React.FC = () => {
           if (!prev) {
             setFileName(file.name);
             setActiveSentenceIndex(-1);
-            return text;
+            return parsed.text;
           }
           return prev;
         });
@@ -686,19 +691,46 @@ const App: React.FC = () => {
               style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 2000 }}
               onClick={() => setShowLibrary(false)}
             />
-            <motion.div
-              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-              className="library-panel glass"
-            >
-              <div className="library-header">
-                <h2 className="library-title">
-                  <Library size={22} style={{ color: 'var(--accent)' }} /> Library
-                </h2>
-                <button className="create-folder-btn" onClick={createFolder} title="New Folder">
-                  <FolderPlus size={18} />
-                </button>
-              </div>
+              <motion.div
+                initial={isLibraryFull ? { opacity: 0 } : { x: '100%' }} 
+                animate={isLibraryFull ? { x: 0, opacity: 1, width: '100%', maxWidth: '100%' } : { x: 0, width: '400px' }} 
+                exit={isLibraryFull ? { opacity: 0 } : { x: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+                className={`library-panel glass ${isLibraryFull ? 'full-screen' : ''}`}
+              >
+                <div className="library-header">
+                  <h2 className="library-title">
+                    <Library size={22} style={{ color: 'var(--accent)' }} /> Library
+                  </h2>
+                  <div className="library-controls">
+                    <button 
+                      className={`control-icon-btn ${libraryView === 'grid' ? 'active' : ''}`} 
+                      onClick={() => setLibraryView('grid')}
+                      title="Grid View"
+                    >
+                      <LayoutGrid size={18} />
+                    </button>
+                    <button 
+                      className={`control-icon-btn ${libraryView === 'list' ? 'active' : ''}`} 
+                      onClick={() => setLibraryView('list')}
+                      title="List View"
+                    >
+                      <List size={18} />
+                    </button>
+                    <div className="v-divider" />
+                    <button 
+                      className="control-icon-btn" 
+                      onClick={() => setIsLibraryFull(!isLibraryFull)}
+                      title={isLibraryFull ? "Exit Full Screen" : "Full Screen"}
+                    >
+                      {isLibraryFull ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                    </button>
+                    <div className="v-divider" />
+                    <button className="create-folder-btn" onClick={createFolder} title="New Folder">
+                      <FolderPlus size={18} />
+                    </button>
+                  </div>
+                </div>
 
               {/* Search Bar */}
               <div className="search-container">
@@ -740,95 +772,109 @@ const App: React.FC = () => {
                 ))}
               </div>
 
-              <div className="library-list">
-                {filteredLibrary.length === 0 ? (
-                  <p className="library-empty">No narratives found</p>
-                ) : filteredLibrary.map(item => (
-                  <div key={item.id} className="library-item-group">
-                    <div
-                      className={`library-item ${currentBook?.id === item.id ? 'active' : ''}`}
-                      onClick={() => {
-                        setContent(item.content);
-                        setFileName(item.title);
-                        setActiveSentenceIndex(-1);
-                        if (item.rate) setRate(item.rate);
-                        setShowLibrary(false);
-                      }}
-                    >
-                      <div className="library-item-info">
-                        <FileText size={18} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                        <div style={{ minWidth: 0 }}>
-                          <p className="library-item-title">{item.title}</p>
-                          <p className="library-item-date">
-                            {new Date(item.timestamp).toLocaleDateString()}
-                            {item.folderId && folders.find(f => f.id === item.folderId) && (
-                              <span className="folder-tag">
-                                • {folders.find(f => f.id === item.folderId)?.name}
-                              </span>
+                <div className={`library-list ${libraryView}`}>
+                  {filteredLibrary.length === 0 ? (
+                    <p className="library-empty">No narratives found</p>
+                  ) : filteredLibrary.map(item => (
+                    <div key={item.id} className={`library-item-group ${libraryView}`}>
+                      <div
+                        className={`library-item ${currentBook?.id === item.id ? 'active' : ''}`}
+                        onClick={() => {
+                          setContent(item.content);
+                          setFileName(item.title);
+                          setActiveSentenceIndex(-1);
+                          if (item.rate) setRate(item.rate);
+                          setShowLibrary(false);
+                        }}
+                      >
+                        {libraryView === 'grid' && (
+                          <div className="library-item-cover">
+                            {item.cover ? (
+                              <img src={item.cover} alt={item.title} />
+                            ) : (
+                              <div className="cover-placeholder">
+                                <FileText size={48} />
+                              </div>
                             )}
-                          </p>
+                          </div>
+                        )}
+                        
+                        <div className="library-item-info">
+                          {libraryView === 'list' && (
+                            <FileText size={18} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                          )}
+                          <div style={{ minWidth: 0 }}>
+                            <p className="library-item-title">{item.title}</p>
+                            <p className="library-item-date">
+                              {new Date(item.timestamp).toLocaleDateString()}
+                              {item.folderId && folders.find(f => f.id === item.folderId) && (
+                                <span className="folder-tag">
+                                  • {folders.find(f => f.id === item.folderId)?.name}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="library-item-actions">
+                          <select 
+                            className="move-to-select"
+                            value={item.folderId || ''}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => moveToFolder(item.id, e.target.value || undefined)}
+                          >
+                            <option value="">No Folder</option>
+                            {folders.map(f => (
+                              <option key={f.id} value={f.id}>{f.name}</option>
+                            ))}
+                          </select>
+                          <button 
+                            className="delete-item-btn" 
+                            onClick={(e) => { e.stopPropagation(); deleteLibraryItem(item.id); }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
-                      
-                      <div className="library-item-actions">
-                        <select 
-                          className="move-to-select"
-                          value={item.folderId || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => moveToFolder(item.id, e.target.value || undefined)}
-                        >
-                          <option value="">No Folder</option>
-                          {folders.map(f => (
-                            <option key={f.id} value={f.id}>{f.name}</option>
-                          ))}
-                        </select>
-                        <button 
-                          className="delete-item-btn" 
-                          onClick={(e) => { e.stopPropagation(); deleteLibraryItem(item.id); }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
 
-                    {item.bookmarks && item.bookmarks.length > 0 && (
-                      <div className="library-bookmarks">
-                        {item.bookmarks.map(bm => (
-                          <div key={bm.index} className="library-bookmark-wrapper">
-                            <button 
-                              className="library-bookmark-chip"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setContent(item.content);
-                                setFileName(item.title);
-                                if (item.rate) setRate(item.rate);
-                                playFromIndex(bm.index);
-                                setShowLibrary(false);
-                              }}
-                            >
-                              <Bookmark size={10} fill="currentColor" style={{ marginRight: 4 }} />
-                              S{bm.index + 1}
-                            </button>
-                            <input 
-                              type="text" 
-                              className="bookmark-note-input"
-                              placeholder="Add note..."
-                              defaultValue={bm.note || ''}
-                              onClick={(e) => e.stopPropagation()}
-                              onBlur={(e) => updateBookmarkNote(bm.index, e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  (e.target as HTMLInputElement).blur();
-                                }
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      {item.bookmarks && item.bookmarks.length > 0 && libraryView === 'list' && (
+                        <div className="library-bookmarks">
+                          {item.bookmarks.map(bm => (
+                            <div key={bm.index} className="library-bookmark-wrapper">
+                              <button 
+                                className="library-bookmark-chip"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setContent(item.content);
+                                  setFileName(item.title);
+                                  if (item.rate) setRate(item.rate);
+                                  playFromIndex(bm.index);
+                                  setShowLibrary(false);
+                                }}
+                              >
+                                <Bookmark size={10} fill="currentColor" style={{ marginRight: 4 }} />
+                                S{bm.index + 1}
+                              </button>
+                              <input 
+                                type="text" 
+                                className="bookmark-note-input"
+                                placeholder="Add note..."
+                                defaultValue={bm.note || ''}
+                                onClick={(e) => e.stopPropagation()}
+                                onBlur={(e) => updateBookmarkNote(bm.index, e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    (e.target as HTMLInputElement).blur();
+                                  }
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
             </motion.div>
           </>
         )}
