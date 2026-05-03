@@ -145,6 +145,11 @@ const App: React.FC = () => {
       result = result.filter(v => v.isPremium);
     }
     return [...result].sort((a, b) => {
+      // 0. Force Microsoft Ava to the absolute top if available
+      const isAvaA = a.name.includes('Ava');
+      const isAvaB = b.name.includes('Ava');
+      if (isAvaA !== isAvaB) return isAvaA ? -1 : 1;
+
       // 1. Locale priority: US > UK > Australia > other English > others
       const getLocalePriority = (lang: string) => {
         if (lang === 'en-US') return 1;
