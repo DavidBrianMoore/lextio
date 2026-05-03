@@ -222,12 +222,18 @@ const App: React.FC = () => {
 
   // Initialize Debug API
   useEffect(() => {
-    initDebugApi({
-      library,
-      setLibrary,
-      processUrl,
-      setContent,
-      setFileName
+    initDebugApi({ 
+      library, 
+      setLibrary, 
+      processUrl, 
+      setContent, 
+      setFileName,
+      setLibraryView,
+      setReaderFontSize,
+      setReaderFontFamily,
+      setSelectedIds,
+      deleteSelected,
+      selectAll
     });
   }, [library, setLibrary]); // Re-init when library changes to keep get() fresh
 

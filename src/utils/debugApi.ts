@@ -13,6 +13,12 @@ export const initDebugApi = (context: {
   processUrl: (url: string) => Promise<void>;
   setContent: (content: string) => void;
   setFileName: (name: string) => void;
+  setLibraryView: (view: 'list' | 'grid' | 'compact') => void;
+  setReaderFontSize: (size: number) => void;
+  setReaderFontFamily: (font: string) => void;
+  setSelectedIds: (ids: Set<string>) => void;
+  deleteSelected: () => void;
+  selectAll: () => void;
 }) => {
   (window as any).lextio = {
     // Core Parsers
@@ -32,6 +38,38 @@ export const initDebugApi = (context: {
       },
       add: (entry: any) => {
         context.setLibrary([...context.library, entry]);
+      }
+    },
+
+    // UI & Appearance
+    ui: {
+      setViewMode: (view: 'list' | 'grid' | 'compact') => {
+        context.setLibraryView(view);
+        console.log(`View mode set to: ${view}`);
+      },
+      setFontSize: (size: number) => {
+        context.setReaderFontSize(size);
+        console.log(`Font size set to: ${size}rem`);
+      },
+      setFontFamily: (font: string) => {
+        context.setReaderFontFamily(font);
+        console.log(`Font family set to: ${font}`);
+      }
+    },
+
+    // Multi-Selection & Bulk Actions
+    selection: {
+      all: () => {
+        context.selectAll();
+        console.log('Select all toggled.');
+      },
+      delete: () => {
+        context.deleteSelected();
+        console.log('Bulk delete triggered.');
+      },
+      clear: () => {
+        context.setSelectedIds(new Set());
+        console.log('Selection cleared.');
       }
     },
 
@@ -60,6 +98,6 @@ export const initDebugApi = (context: {
     version: (window as any).__APP_VERSION__ || 'development'
   };
 
-  console.log('%cLextio Debug API Initialized', 'color: #81e6d9; font-weight: bold; font-size: 1.2rem;');
+  console.log('%cLextio Debug API Expanded', 'color: #81e6d9; font-weight: bold; font-size: 1.2rem;');
   console.log('Access via window.lextio');
 };
