@@ -58,7 +58,10 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
       {(startIdx === 0 || activeSentenceIndex === 0) && (
         <div
           className={`vscroll-block title-block ${activeSentenceIndex === 0 ? 'active' : activeSentenceIndex > 0 ? 'past' : ''}`}
-          onClick={() => onSentenceClick(0)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSentenceClick(0);
+          }}
           ref={activeSentenceIndex === 0 ? activeRef : undefined}
         >
           <h2 className={`sentence ${activeSentenceIndex === 0 ? 'active' : activeSentenceIndex > 0 ? 'past' : 'future'}`}>
@@ -81,7 +84,10 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
           <div
             key={globalIndex}
             className="vscroll-block"
-            onClick={() => onSentenceClick(globalIndex)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSentenceClick(globalIndex);
+            }}
             ref={isActive ? activeRef : undefined}
           >
             <p className={`sentence ${stateClass}`}>

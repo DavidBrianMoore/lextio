@@ -793,7 +793,10 @@ const App: React.FC = () => {
       </nav>
 
       {/* ── Main Reader ── */}
-      <main className="reader-container">
+      <main 
+        className="reader-container"
+        onClick={() => setFocusMode(prev => !prev)}
+      >
         {content ? (
           <div className="animate-fade-in">
             <PretextReader
@@ -889,7 +892,12 @@ const App: React.FC = () => {
                       Select Narrator
                     </div>
                     <div className="voice-picker-list">
-                      {voices.map(v => (
+                      {[...voices]
+                        .sort((a, b) => {
+                          if (a.isPremium === b.isPremium) return a.name.localeCompare(b.name);
+                          return a.isPremium ? -1 : 1;
+                        })
+                        .map(v => (
                         <div 
                           key={v.name}
                           className={`voice-picker-item${selectedVoice?.name === v.name ? ' active' : ''}`}
