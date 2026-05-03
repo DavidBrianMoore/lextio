@@ -1287,9 +1287,16 @@ body {
     align-items: center;
   }
 
-  /* Hide volume pill and waveform on mobile to save space */
-  .control-left {
+  /* Hide volume pill on mobile to save space, but keep the Voice Box */
+  .volume-pill {
     display: none;
+  }
+  
+  .control-left {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 0.25rem;
   }
 
   /* Center the playback buttons */
