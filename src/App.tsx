@@ -144,10 +144,7 @@ const App: React.FC = () => {
       result = result.filter(v => v.isPremium);
     }
     return [...result].sort((a, b) => {
-      // 1. Premium first
-      if (a.isPremium !== b.isPremium) return a.isPremium ? -1 : 1;
-      
-      // 2. Locale priority: US > UK > Australia > other English > others
+      // 1. Locale priority: US > UK > Australia > other English > others
       const getLocalePriority = (lang: string) => {
         if (lang === 'en-US') return 1;
         if (lang === 'en-GB') return 2;
@@ -159,7 +156,11 @@ const App: React.FC = () => {
       const prioA = getLocalePriority(a.lang);
       const prioB = getLocalePriority(b.lang);
       if (prioA !== prioB) return prioA - prioB;
+
+      // 2. Premium first within the same locale group
+      if (a.isPremium !== b.isPremium) return a.isPremium ? -1 : 1;
       
+      // 3. Alphabetical
       return a.name.localeCompare(b.name);
     });
   }, [voices, showOnlyPremium, showAllLanguages]);
