@@ -98,8 +98,8 @@ export const useVoice = () => {
   // Log detected voices for debugging
   useEffect(() => {
     if (voices.length > 0) {
-      const voiceNames = voices.map(v => v.name).join(', ');
-      logger.info(`Voices detected (${voices.length}): ${voiceNames}`);
+      const voiceDetails = voices.map(v => `${v.name} (${v.lang})${v.isPremium ? ' ✨' : ''}`).join(', ');
+      logger.info(`Voices detected (${voices.length}): ${voiceDetails}`);
     }
   }, [voices]);
 

@@ -1308,20 +1308,21 @@ const App: React.FC = () => {
                   
                   {/iPhone|iPad/.test(navigator.userAgent) && (
                     <div style={{
-                      padding: '0.75rem',
-                      borderRadius: '12px',
-                      background: 'rgba(52, 199, 89, 0.08)',
-                      border: '1px solid rgba(52, 199, 89, 0.15)',
-                      marginBottom: '0.75rem'
+                      marginTop: '0.875rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem'
                     }}>
-                      <p style={{ fontSize: '0.7rem', color: '#34C759', fontWeight: 700, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Volume2 size={12} /> PRO TIP: BETTER VOICES
-                      </p>
-                      <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
-                        iOS browsers are restricted to system voices. To get high-quality narration, go to:
-                        <br /><strong>Settings → Accessibility → Read & Speak</strong> (or Spoken Content).
-                        <br />Tap <strong>Voices</strong>, choose a language, and download any voice labeled <strong>"Enhanced"</strong> or <strong>"Siri"</strong>.
-                      </p>
+                      <div className="pro-tip" style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#60a5fa', fontWeight: 700, fontSize: '0.7rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <Volume2 size={14} /> iOS 18 Pro Tip
+                        </div>
+                        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, margin: 0 }}>
+                          For Siri or Enhanced voices, ensure they are fully downloaded in <strong>Settings → Accessibility → Read & Speak → Voices</strong>. 
+                          Tap the voice name and make sure the <strong>Cloud icon</strong> is gone and the voice is tested. 
+                          If they still don't show, try the <strong>REFRESH</strong> button above.
+                        </p>
+                      </div>
                     </div>
                   )}
 
