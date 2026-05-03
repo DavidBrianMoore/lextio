@@ -128,6 +128,7 @@ const App: React.FC = () => {
   const [isLibraryFull, setIsLibraryFull] = useState(false);
   const [libraryWidth, setLibraryWidth] = useState(600);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set(['US']));
 
   const {
     isPlaying, rate, setRate,
@@ -164,6 +165,39 @@ const App: React.FC = () => {
       return a.name.localeCompare(b.name);
     });
   }, [voices, showOnlyPremium, showAllLanguages]);
+
+  const groupedVoices = useMemo(() => {
+    const groups: Record<string, { label: string, voices: any[] }> = {
+      'US': { label: 'United States', voices: [] },
+      'UK': { label: 'United Kingdom', voices: [] },
+      'AU': { label: 'Australia', voices: [] },
+      'EN': { label: 'Other English', voices: [] },
+      'OTHER': { label: 'Other Languages', voices: [] }
+    };
+
+    filteredVoices.forEach(v => {
+      if (v.lang === 'en-US') groups['US'].voices.push(v);
+      else if (v.lang === 'en-GB') groups['UK'].voices.push(v);
+      else if (v.lang === 'en-AU') groups['AU'].voices.push(v);
+      else if (v.lang.startsWith('en')) groups['EN'].voices.push(v);
+      else groups['OTHER'].voices.push(v);
+    });
+
+    return Object.entries(groups)
+      .filter(([_, group]) => group.voices.length > 0)
+      .map(([id, group]) => ({ id, ...group }));
+  }, [filteredVoices]);
+
+  // Auto-expand selected voice's region when picker opens
+  useEffect(() => {
+    if (showVoicePicker && selectedVoice) {
+      const region = selectedVoice.lang === 'en-US' ? 'US' :
+                     selectedVoice.lang === 'en-GB' ? 'UK' :
+                     selectedVoice.lang === 'en-AU' ? 'AU' :
+                     selectedVoice.lang.startsWith('en') ? 'EN' : 'OTHER';
+      setExpandedRegions(prev => new Set(prev).add(region));
+    }
+  }, [showVoicePicker, selectedVoice]);
 
   const isFirstRender = useRef(true);
 
@@ -930,21 +964,45 @@ const App: React.FC = () => {
                       Select Narrator
                     </div>
                     <div className="voice-picker-list">
-                      {filteredVoices.map(v => (
-                        <div 
-                          key={v.name}
-                          className={`voice-picker-item${selectedVoice?.name === v.name ? ' active' : ''}`}
-                          onClick={() => {
-                            setSelectedVoice(v.voice);
-                            setShowVoicePicker(false);
-                          }}
-                        >
-                          <div className="voice-item-info">
-                            <span className="voice-item-name">{v.name}</span>
-                            <span className="voice-item-lang">{v.lang.split('-')[0].toUpperCase()}</span>
+                      {groupedVoices.map(group => (
+                        <div key={group.id} className={`voice-group-item${expandedRegions.has(group.id) ? ' expanded' : ''}`}>
+                          <div 
+                            className="voice-group-header"
+                            onClick={() => {
+                              const next = new Set(expandedRegions);
+                              if (next.has(group.id)) next.delete(group.id);
+                              else next.add(group.id);
+                              setExpandedRegions(next);
+                            }}
+                          >
+                            <span className="voice-group-label">
+                              {group.label}
+                              <span className="voice-group-count">({group.voices.length})</span>
+                            </span>
+                            <ChevronDown size={12} className="voice-group-chevron" />
                           </div>
-                          {v.isPremium && <span className="premium-sparkle">✨</span>}
-                          {selectedVoice?.name === v.name && <div className="active-dot" />}
+                          
+                          {expandedRegions.has(group.id) && (
+                            <div className="voice-group-content">
+                              {group.voices.map(v => (
+                                <div 
+                                  key={v.name}
+                                  className={`voice-picker-item${selectedVoice?.name === v.name ? ' active' : ''}`}
+                                  onClick={() => {
+                                    setSelectedVoice(v.voice);
+                                    setShowVoicePicker(false);
+                                  }}
+                                >
+                                  <div className="voice-item-info">
+                                    <span className="voice-item-name">{v.name}</span>
+                                    <span className="voice-item-lang">{v.lang.split('-')[0].toUpperCase()}</span>
+                                  </div>
+                                  {v.isPremium && <span className="premium-sparkle">✨</span>}
+                                  {selectedVoice?.name === v.name && <div className="active-dot" />}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
