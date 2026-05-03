@@ -1294,6 +1294,5 @@ body {
 }
 
 @media (max-width: 480px) {
-  .version-tag { display: none; }
   .extra-icons { gap: 6px; }
 }

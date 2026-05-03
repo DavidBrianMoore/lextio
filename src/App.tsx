@@ -1250,6 +1250,19 @@ const App: React.FC = () => {
                 </div>
 
               </div>
+
+              {/* Version Info */}
+              <div style={{ 
+                marginTop: 'auto', 
+                padding: '1.5rem', 
+                borderTop: '1px solid rgba(255,255,255,0.05)',
+                textAlign: 'center',
+                opacity: 0.3
+              }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                  Lextio v{__APP_VERSION__}
+                </span>
+              </div>
             </motion.div>
           </>
         )}
