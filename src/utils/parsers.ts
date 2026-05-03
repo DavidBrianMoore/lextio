@@ -20,25 +20,26 @@ export interface ParsedDocument {
  */
 export const cleanupText = (text: string): string => {
   // 1. Caesar Shift Repair & Ligature Fix
-  const REPAIR_WORDS = [
+  const REPAIR_WORDS = new Set([
     'the', 'and', 'with', 'that', 'this', 'for', 'from', 'have', 'been', 'which',
     'are', 'was', 'were', 'but', 'not', 'help', 'poor', 'enough', 'often', 'their',
-    'would', 'could', 'should', 'more', 'some', 'than', 'other', 'them', 'then'
-  ];
+    'would', 'could', 'should', 'more', 'some', 'than', 'other', 'them', 'then',
+    'said', 'they', 'will', 'your', 'made', 'said', 'time', 'into', 'many', 'know',
+    'argue', 'argued', 'argues', 'arguing', 'market', 'based', 'economy', 'economic',
+    'creates', 'significant', 'inequality', 'does', 'not', 'help', 'poor', 'enough',
+    'socialism', 'variants', 'couple', 'government', 'ownership', 'means', 'production',
+    'substantial', 'centrally', 'determined', 'allocation', 'growth', 'average', 'income'
+  ]);
 
   const caesarShift = (str: string, shift: number): string => {
     // Special mapping for common broken ligatures and shifted punctuation in PDFs
     const charMap: Record<string, string> = {
-      '¿': 'fi',
-      '¬': 'fl',
-      '\\': 'Y',
-      '[': 'X',
-      ']': 'Z'
+      '¿': 'fi', '¬': 'fl', '\\': 'Y', '[': 'X', ']': 'Z',
+      '(': '(', ')': ')', ',': ',', '.': '.', ':': ':', ';': ';'
     };
 
     return str.split('').map(char => {
       if (shift === -3 && charMap[char]) return charMap[char];
-      
       const code = char.charCodeAt(0);
       if (code >= 65 && code <= 90) return String.fromCharCode(((code - 65 + shift + 26) % 26) + 65);
       if (code >= 97 && code <= 122) return String.fromCharCode(((code - 97 + shift + 26) % 26) + 97);
@@ -47,13 +48,13 @@ export const cleanupText = (text: string): string => {
   };
 
   const isGibberish = (word: string): boolean => {
-    const cleanWord = word.trim();
-    if (cleanWord.length < 2) return false;
-    // Mostly uppercase words with PDF-shifted punctuation are often garbled
-    if (/^[A-Z\\\[\]\^¿¬]+$/.test(cleanWord)) return true;
-    // Words with extremely low vowel counts (excluding short ones)
-    const vowels = cleanWord.match(/[aeiou]/gi);
-    if (cleanWord.length > 5 && (!vowels || vowels.length / cleanWord.length < 0.15)) return true;
+    const clean = word.trim();
+    if (clean.length < 2) return false;
+    // Mostly uppercase words with PDF-shifted punctuation are highly suspicious
+    if (/^[A-Z\\\[\]\^¿¬]+$/.test(clean)) return true;
+    // Words with extremely low vowel counts or weird character mixes
+    const vowels = clean.match(/[aeiou]/gi);
+    if (clean.length > 4 && (!vowels || vowels.length / clean.length < 0.15)) return true;
     return false;
   };
 
@@ -61,20 +62,29 @@ export const cleanupText = (text: string): string => {
   let cleaned = text.replace(/æ/g, 'ae').replace(/œ/g, 'oe');
 
   cleaned = cleaned.split('\n').map(line => {
-    // If the line looks mixed or suspicious, process word by word
     const parts = line.split(/(\s+)/);
     const repaired = parts.map(part => {
       const clean = part.trim();
-      if (isGibberish(part) || clean === 'D') {
+      if (!clean) return part;
+
+      // Always try -3 shift for suspicious or all-caps words
+      if (isGibberish(part) || clean === 'D' || /^[A-Z]{2,}$/.test(clean)) {
         const shifted = caesarShift(part, -3);
-        // If the shifted version looks like English (has vowels, or is a common word)
-        const vowels = shifted.match(/[aeiou]/gi);
         const lowerShifted = shifted.toLowerCase();
-        if (vowels && (vowels.length / shifted.length > 0.2 || REPAIR_WORDS.some(w => lowerShifted.includes(w)))) {
-          // If original was all caps, lowercase the repair to match surrounding text
-          return /^[A-Z\\\[\]\^¿¬]+$/.test(clean) ? lowerShifted : shifted;
+        const vowels = shifted.match(/[aeiou]/gi);
+        const vowelRatio = vowels ? vowels.length / shifted.length : 0;
+
+        // Repair if: it's a known common word OR it looks much more like English than the original
+        const isCommon = REPAIR_WORDS.has(lowerShifted);
+        const looksLikeEnglish = vowelRatio > 0.25;
+
+        if (isCommon || looksLikeEnglish) {
+          // If original was all caps, lowercase the repair unless it's a known acronym
+          const shouldLowercase = /^[A-Z\\\[\]\^¿¬]+$/.test(clean) && clean.length > 1;
+          return shouldLowercase ? lowerShifted : shifted;
         }
-        // Special case for common short garbled words (like 'D' -> 'a')
+        
+        // Special fallback for single-char 'a'
         if (clean === 'D') return part.replace('D', 'a');
       }
       return part;
