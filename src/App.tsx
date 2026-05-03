@@ -70,6 +70,7 @@ const App: React.FC = () => {
   const [focusMode, setFocusMode] = useState(false);
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(-1);
   const [furthestIndex, setFurthestIndex] = useState(0);
+  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   const {
     isPlaying, rate, setRate,
@@ -155,6 +156,14 @@ const App: React.FC = () => {
     }
   }, [content, activeSentenceIndex, fileName, library, furthestIndex, rate]);
 
+  // Notification timeout
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   // Preview voice/speed when paused; restart when playing
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
@@ -224,6 +233,7 @@ const App: React.FC = () => {
         };
 
         setLibrary(prev => [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 50));
+        setNotification({ message: `Added "${file.name}" to library`, type: 'success' });
 
         // Only switch view if we don't have active content yet
         setContent(prev => {
@@ -236,6 +246,7 @@ const App: React.FC = () => {
         });
       } catch (err) {
         console.error(`Failed to parse ${file.name}:`, err);
+        setNotification({ message: `Failed to import "${file.name}"`, type: 'error' });
       } finally {
         setParsingCount(prev => Math.max(0, prev - 1));
       }
@@ -528,14 +539,18 @@ const App: React.FC = () => {
       {/* ── Controls Footer ── */}
       <footer className="controls-footer glass">
 
-        {/* Rate Warning Toast */}
+        {/* Notification Toast */}
         <AnimatePresence>
-          {maxRateWarning && (
+          {(maxRateWarning || notification) && (
             <motion.div
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-              className="rate-warning-toast"
+              className={`rate-warning-toast ${notification?.type || ''}`}
+              style={{ 
+                background: notification?.type === 'error' ? 'rgba(255, 82, 82, 0.9)' : 
+                            notification?.type === 'success' ? 'rgba(76, 175, 80, 0.9)' : undefined 
+              }}
             >
-              {maxRateWarning}
+              {notification?.message || maxRateWarning}
             </motion.div>
           )}
         </AnimatePresence>
