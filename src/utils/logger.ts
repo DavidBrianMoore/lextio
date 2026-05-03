@@ -1,0 +1,64 @@
+type LogType = 'error' | 'warn' | 'info';
+
+interface LogEntry {
+  timestamp: number;
+  type: LogType;
+  message: string;
+  details?: any;
+  userAgent: string;
+}
+
+const MAX_LOGS = 50;
+
+export const logger = {
+  log: (type: LogType, message: string, details?: any) => {
+    try {
+      const logs: LogEntry[] = JSON.parse(localStorage.getItem('lextio-debug-logs') || '[]');
+      const newEntry: LogEntry = {
+        timestamp: Date.now(),
+        type,
+        message,
+        details: details instanceof Error ? { name: details.name, message: details.message, stack: details.stack } : details,
+        userAgent: navigator.userAgent
+      };
+      
+      logs.unshift(newEntry);
+      localStorage.setItem('lextio-debug-logs', JSON.stringify(logs.slice(0, MAX_LOGS)));
+      
+      // Also log to console
+      if (type === 'error') console.error(message, details);
+      else if (type === 'warn') console.warn(message, details);
+      else console.log(message, details);
+    } catch (e) {
+      console.error('Failed to save log', e);
+    }
+  },
+  error: (message: string, details?: any) => logger.log('error', message, details),
+  warn: (message: string, details?: any) => logger.log('warn', message, details),
+  info: (message: string, details?: any) => logger.log('info', message, details),
+  
+  getLogs: (): LogEntry[] => {
+    try {
+      return JSON.parse(localStorage.getItem('lextio-debug-logs') || '[]');
+    } catch (e) {
+      return [];
+    }
+  },
+  
+  getDebugReport: () => {
+    const logs = logger.getLogs();
+    const report = {
+      version: '1.0.30',
+      device: {
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: (navigator as any).platform,
+        screen: `${window.screen.width}x${window.screen.height}`,
+      },
+      logs
+    };
+    return JSON.stringify(report, null, 2);
+  },
+  
+  clear: () => localStorage.removeItem('lextio-debug-logs')
+};

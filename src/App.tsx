@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Settings, Library, Shuffle, Maximize2, History, FileText, RotateCcw, FastForward, Bookmark, Globe, Search, FolderPlus, Folder as FolderIcon, Trash2, LayoutGrid, List, Minimize2, Plus, AlignJustify, CheckSquare, Square, X } from 'lucide-react';
+import { 
+  FileText, Plus, Search, Library, Trash2, CheckSquare, Square, 
+  Settings, Volume2, SkipBack, SkipForward, Play, Pause, X, Globe,
+  LayoutGrid, List, AlignJustify, Maximize2, Minimize2, FolderPlus, Folder as FolderIcon,
+  RotateCcw, FastForward, Bookmark, History, Shuffle, ClipboardCheck
+} from 'lucide-react';
+import { logger } from './utils/logger';
 import { useVoice } from './hooks/useVoice';
 import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -264,7 +270,7 @@ const App: React.FC = () => {
       }
       return result.length > 0 ? result : [content];
     } catch (e) {
-      console.error('Failed to process sentences', e);
+      logger.error('Failed to process sentences', e);
       return [content || ''];
     }
   }, [content, fileName]);
@@ -326,25 +332,25 @@ const App: React.FC = () => {
           try {
             localStorage.setItem('voice-reader-library', JSON.stringify(updated));
           } catch (e) {
-            console.error('Storage full', e);
+            logger.error('Storage full', e);
             setNotification({ message: 'Library is full. Please delete some books.', type: 'error' });
             return prev;
           }
           return updated;
         });
-        setNotification({ message: `Added "${file.name}" to library`, type: 'success' });
 
         // Only switch view if we don't have active content yet
         setContent(prev => {
           if (!prev) {
             setFileName(file.name);
             setActiveSentenceIndex(-1);
+            setNotification({ message: `Added "${file.name}" to library`, type: 'success' });
             return parsed.text;
           }
           return prev;
         });
       } catch (err) {
-        console.error(`Failed to parse ${file.name}:`, err);
+        logger.error(`Failed to parse ${file.name}:`, err);
         const errMsg = err instanceof Error ? err.message : 'Unknown error';
         setNotification({ message: `Failed to import "${file.name}": ${errMsg}`, type: 'error' });
       } finally {
@@ -411,7 +417,7 @@ const App: React.FC = () => {
       });
       setNotification({ message: `Loaded "${name}" from URL`, type: 'success' });
     } catch (err) {
-      console.error('URL Load error:', err);
+      logger.error('URL Load error:', err);
       const errMsg = err instanceof Error ? err.message : 'Failed to load from URL';
       setNotification({ message: errMsg, type: 'error' });
     } finally {
@@ -1247,6 +1253,40 @@ const App: React.FC = () => {
                     onChange={(e) => setReaderFontSize(parseFloat(e.target.value))}
                     style={{ width: '100%', accentColor: 'var(--accent)' }}
                   />
+                </div>
+
+                {/* Debug Info */}
+                <div className="settings-group">
+                  <label className="settings-label">Support & Debugging</label>
+                  <button 
+                    onClick={() => {
+                      const report = logger.getDebugReport();
+                      navigator.clipboard.writeText(report);
+                      setNotification({ message: 'Debug report copied to clipboard', type: 'success' });
+                    }}
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'var(--accent)',
+                      padding: '0.875rem',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em'
+                    }}
+                  >
+                    <ClipboardCheck size={14} /> Copy Debug Report
+                  </button>
+                  <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', marginTop: '0.5rem', textAlign: 'center' }}>
+                    Share this report with support to troubleshoot issues.
+                  </p>
                 </div>
 
               </div>

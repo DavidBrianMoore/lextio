@@ -1,12 +1,13 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
+import { logger } from './logger';
 
-// Import the worker as a same-origin bundled asset via Vite's ?url suffix.
-// This avoids CORS issues on iOS Safari (CDN workers are blocked) and the
-// SecurityError caused by workerSrc='' in pdfjs-dist v5.
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+// pdfjs-dist v3: classic (non-module) worker — works on iOS 12+.
+// v5's module worker (type:'module') is unreliable on iOS Safari.
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
 
 export interface ParsedDocument {
   text: string;
@@ -22,9 +23,11 @@ export const parsePDF = async (file: File): Promise<ParsedDocument> => {
     });
     
     const pdf = await loadingTask.promise;
+    // Cap pages on mobile to avoid memory exhaustion
+    const maxPages = Math.min(pdf.numPages, 100);
     let fullText = '';
     
-    for (let i = 1; i <= pdf.numPages; i++) {
+    for (let i = 1; i <= maxPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
       const strings = content.items.map((item: any) => {
@@ -32,19 +35,30 @@ export const parsePDF = async (file: File): Promise<ParsedDocument> => {
         return '';
       });
       fullText += strings.join(' ') + '\n';
+      // Yield to browser every 10 pages to avoid watchdog timeouts on iOS
+      if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
+    }
+    
+    if (pdf.numPages > maxPages) {
+      fullText += `\n\n[Note: Only first ${maxPages} of ${pdf.numPages} pages imported]`;
     }
     
     return { text: fullText };
   } catch (error) {
-    console.error('PDF Parsing Error:', error);
+    logger.error('PDF Parsing Error:', error);
     throw new Error(`Failed to parse PDF: ${error instanceof Error ? error.message : String(error)}`);
   }
 };
 
 export const parseDOCX = async (file: File): Promise<ParsedDocument> => {
-  const arrayBuffer = await file.arrayBuffer();
-  const result = await mammoth.extractRawText({ arrayBuffer });
-  return { text: result.value };
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return { text: result.value };
+  } catch (error) {
+    logger.error('DOCX Parsing Error:', error);
+    throw error;
+  }
 };
 
 export const parseEPUB = async (file: File): Promise<ParsedDocument> => {
@@ -104,7 +118,7 @@ export const parseEPUB = async (file: File): Promise<ParsedDocument> => {
       }
     }
   } catch (e) {
-    console.warn('Failed to extract cover art:', e);
+    logger.warn('Failed to extract cover art:', e);
   }
 
   // 2. Build manifest items and spine
@@ -152,7 +166,9 @@ export const parseEPUB = async (file: File): Promise<ParsedDocument> => {
   
   const fullText = textChunks.join('\n\n');
   if (!fullText.trim()) {
-    throw new Error(`No readable text found in this EPUB.`);
+    const err = new Error(`No readable text found in this EPUB.`);
+    logger.error('EPUB Parsing Error', err);
+    throw err;
   }
   
   return { text: fullText, cover: coverData };
