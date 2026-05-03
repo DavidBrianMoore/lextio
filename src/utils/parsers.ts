@@ -110,22 +110,30 @@ export const parsePDF = async (file: File): Promise<ParsedDocument> => {
 
         // New line or vertical jump
         if (lastY !== -1 && Math.abs(y - lastY) > 5) {
-          pageText += ' ';
+          pageText += '\n';
         } 
         // Horizontal gap detection (detects missing spaces in PDF stream)
         else if (lastX !== -1) {
           const gap = x - (lastX + lastWidth);
           const fontSize = Math.abs(item.transform[0]);
-          // If gap is > 15% of font size, it's likely a space
-          if (gap > fontSize * 0.15) {
+          // If gap is > 25% of font size, it's a true word boundary.
+          // (A threshold of 0.15 triggers falsely on letter-spaced titles)
+          if (gap > fontSize * 0.25) {
              pageText += ' ';
           }
         }
 
         pageText += str;
-        lastX = x;
-        lastY = y;
-        lastWidth = width;
+        
+        // Native EOL marker from PDF.js
+        if (item.hasEOL) {
+          pageText += '\n';
+          lastY = -1; // Reset line tracking
+        } else {
+          lastX = x;
+          lastY = y;
+          lastWidth = width;
+        }
       }
       
       fullText += pageText + '\n';
