@@ -49,6 +49,13 @@ export const cleanupText = (text: string): string => {
     return line;
   }).join('\n');
 
+  // 2. Reconstruct letter-spaced titles (e.g., "A N   E S S A Y" -> "AN   ESSAY")
+  // We find sequences of single letters separated by exactly ONE space, and merge them.
+  // Because word boundaries have 2+ spaces (thanks to proportional gap logic), they won't be merged.
+  cleaned = cleaned.replace(/\b([A-Za-z](?: [A-Za-z])+)\b/g, (match) => {
+    return match.replace(/ /g, '');
+  });
+
   return cleaned
     // Remove non-printable control characters (often show up as boxes/☒ in PDFs)
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/g, '')
@@ -116,10 +123,12 @@ export const parsePDF = async (file: File): Promise<ParsedDocument> => {
         else if (lastX !== -1) {
           const gap = x - (lastX + lastWidth);
           const fontSize = Math.abs(item.transform[0]);
-          // If gap is > 25% of font size, it's a true word boundary.
-          // (A threshold of 0.15 triggers falsely on letter-spaced titles)
-          if (gap > fontSize * 0.25) {
-             pageText += ' ';
+          // If gap is significant, insert spaces proportional to the gap size.
+          // This allows us to distinguish between kerning/letter-spacing (1 space)
+          // and actual word boundaries (2+ spaces).
+          if (gap > fontSize * 0.15) {
+             const spaces = Math.max(1, Math.round(gap / (fontSize * 0.2)));
+             pageText += ' '.repeat(spaces);
           }
         }
 
