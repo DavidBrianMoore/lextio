@@ -267,6 +267,7 @@ const App: React.FC = () => {
 
   const processUrl = async (url: string) => {
     setIsParsing(true);
+    setParsingCount(1);
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch document.');
@@ -274,30 +275,39 @@ const App: React.FC = () => {
       
       let name = url.split('/').pop()?.split('?')[0] || 'remote-document.epub';
       if (!name.includes('.')) name += '.epub';
-      setFileName(name);
 
-      let text = '';
+      let parsed: { text: string; cover?: string };
       const lowerName = name.toLowerCase();
       const file = new File([blob], name, { type: blob.type });
 
-      if (lowerName.endsWith('.pdf')) text = await parsePDF(file);
-      else if (lowerName.endsWith('.docx')) text = await parseDOCX(file);
-      else if (lowerName.endsWith('.epub')) text = await parseEPUB(file);
+      if (lowerName.endsWith('.pdf')) parsed = await parsePDF(file);
+      else if (lowerName.endsWith('.docx')) parsed = await parseDOCX(file);
+      else if (lowerName.endsWith('.epub')) parsed = await parseEPUB(file);
+      else throw new Error('Unsupported format');
       
-      if (!text) throw new Error('No readable content found.');
+      if (!parsed.text) throw new Error('No readable content found.');
       
-      setContent(text);
+      setFileName(name);
+      setContent(parsed.text);
       setActiveSentenceIndex(-1);
-      const entry: LibraryEntry = { id: Math.random().toString(36).slice(2), title: name, content: text, timestamp: Date.now() };
-      setLibrary(prev => {
-        const updated = [entry, ...prev.filter(i => i.title !== name)].slice(0, 20);
-        localStorage.setItem('voice-reader-library', JSON.stringify(updated));
-        return updated;
-      });
+
+      const entry: LibraryEntry = { 
+        id: crypto.randomUUID(), 
+        title: name, 
+        content: parsed.text, 
+        cover: parsed.cover,
+        timestamp: Date.now() 
+      };
+
+      setLibrary(prev => [entry, ...prev.filter(i => i.title !== name)].slice(0, 50));
+      setNotification({ message: `Loaded "${name}" from URL`, type: 'success' });
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to load from URL.');
+      console.error('URL Load error:', err);
+      const errMsg = err instanceof Error ? err.message : 'Failed to load from URL';
+      setNotification({ message: errMsg, type: 'error' });
     } finally {
       setIsParsing(false);
+      setParsingCount(0);
     }
   };
 
