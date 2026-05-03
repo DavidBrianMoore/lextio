@@ -206,7 +206,6 @@ const App: React.FC = () => {
     setParsingCount(files.length);
     
     for (const file of files) {
-      setFileName(file.name);
       try {
         let text = '';
         const name = file.name.toLowerCase();
@@ -226,11 +225,15 @@ const App: React.FC = () => {
 
         setLibrary(prev => [entry, ...prev.filter(i => i.title !== file.name)].slice(0, 50));
 
-        // Set as active if it's the only or last one
-        if (files.indexOf(file) === files.length - 1) {
-          setContent(text);
-          setActiveSentenceIndex(-1);
-        }
+        // Only switch view if we don't have active content yet
+        setContent(prev => {
+          if (!prev) {
+            setFileName(file.name);
+            setActiveSentenceIndex(-1);
+            return text;
+          }
+          return prev;
+        });
       } catch (err) {
         console.error(`Failed to parse ${file.name}:`, err);
       } finally {
@@ -364,9 +367,9 @@ const App: React.FC = () => {
       return;
     }
 
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleFileUpload({ target: { files: [file] } } as any);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) {
+      handleFileUpload({ target: { files: e.dataTransfer.files } } as any);
     }
   };
 
