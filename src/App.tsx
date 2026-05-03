@@ -179,10 +179,30 @@ const App: React.FC = () => {
   }, []);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
+    const docElm = document.documentElement as any;
+    const doc = document as any;
+
+    if (!doc.fullscreenElement && !doc.webkitFullscreenElement) {
+      const req = docElm.requestFullscreen || docElm.webkitRequestFullscreen || docElm.msRequestFullscreen;
+      if (req) {
+        req.call(docElm).catch((err: any) => {
+          setNotification({ 
+            message: 'Fullscreen is not supported by this browser (common on iPhones). Try Zen Mode instead!', 
+            type: 'error' 
+          });
+          logger.warn(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
+      } else {
+        setNotification({ 
+          message: 'Fullscreen is not supported by your device.', 
+          type: 'error' 
+        });
+      }
+    } else {
+      const exit = doc.exitFullscreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+      if (exit) {
+        exit.call(doc);
+      }
     }
   };
 
