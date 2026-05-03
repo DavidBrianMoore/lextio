@@ -16,10 +16,42 @@ export interface ParsedDocument {
 
 /**
  * Clean up text artifacts from PDF/EPUB extraction
- * (Ligatures, split words, weird spacing)
+ * (Ligatures, split words, weird spacing, and Caesar-shifted PDF gibberish)
  */
 export const cleanupText = (text: string): string => {
-  return text
+  // 1. Caesar Shift Repair (-3 is very common in broken PDFs)
+  const caesarShift = (str: string, shift: number): string => {
+    return str.split('').map(char => {
+      const code = char.charCodeAt(0);
+      if (code >= 65 && code <= 90) return String.fromCharCode(((code - 65 + shift + 26) % 26) + 65);
+      if (code >= 97 && code <= 122) return String.fromCharCode(((code - 97 + shift + 26) % 26) + 97);
+      return char;
+    }).join('');
+  };
+
+  const REPAIR_WORDS = ['the', 'and', 'with', 'that', 'this', 'for', 'from', 'have', 'been', 'which'];
+  const getGibberishScore = (str: string): number => {
+    const words = str.toLowerCase().match(/\b[a-z]{2,}\b/g) || [];
+    if (words.length === 0) return 0;
+    const commonCount = words.filter(w => REPAIR_WORDS.includes(w)).length;
+    return commonCount / words.length;
+  };
+
+  // Process text in lines to handle mixed garbled/normal text
+  let cleaned = text.split('\n').map(line => {
+    // If the line has very few common words but looks like it could be English, try to fix it
+    if (line.length > 20 && getGibberishScore(line) < 0.05) {
+      const shifted = caesarShift(line, -3);
+      if (getGibberishScore(shifted) > 0.15) {
+        return shifted;
+      }
+    }
+    return line;
+  }).join('\n');
+
+  return cleaned
+    // Remove non-printable control characters (often show up as boxes/☒ in PDFs)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/g, '')
     // Fix ligatures split by spaces (fi, fl, ff)
     .replace(/(\w)f\s+i(\w)/g, '$1fi$2')
     .replace(/(\w)f\s+l(\w)/g, '$1fl$2')
