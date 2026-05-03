@@ -79,6 +79,17 @@ const App: React.FC = () => {
     return true;
   });
 
+  const [showAllLanguages, setShowAllLanguages] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('voice-reader-settings');
+      if (saved) {
+        const { showAllLanguages: savedVal } = JSON.parse(saved);
+        return savedVal ?? false;
+      }
+    } catch (e) {}
+    return false;
+  });
+
   const [readerFontSize, setReaderFontSize] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('voice-reader-reader-settings');
@@ -125,11 +136,18 @@ const App: React.FC = () => {
   } = useVoice();
 
   const filteredVoices = useMemo(() => {
-    if (showOnlyPremium) {
-      return voices.filter(v => v.isPremium);
+    let result = voices;
+    if (!showAllLanguages) {
+      result = result.filter(v => v.lang.startsWith('en'));
     }
-    return voices;
-  }, [voices, showOnlyPremium]);
+    if (showOnlyPremium) {
+      result = result.filter(v => v.isPremium);
+    }
+    return [...result].sort((a, b) => {
+      if (a.isPremium === b.isPremium) return a.name.localeCompare(b.name);
+      return a.isPremium ? -1 : 1;
+    });
+  }, [voices, showOnlyPremium, showAllLanguages]);
 
   const isFirstRender = useRef(true);
 
@@ -275,8 +293,8 @@ const App: React.FC = () => {
   // Persist settings
   useEffect(() => {
     if (isFirstRender.current) return;
-    localStorage.setItem('voice-reader-settings', JSON.stringify({ scrollMode, showOnlyPremium }));
-  }, [scrollMode, showOnlyPremium]);
+    localStorage.setItem('voice-reader-settings', JSON.stringify({ scrollMode, showOnlyPremium, showAllLanguages }));
+  }, [scrollMode, showOnlyPremium, showAllLanguages]);
 
   useEffect(() => {
     if (isFirstRender.current) return;
@@ -896,12 +914,7 @@ const App: React.FC = () => {
                       Select Narrator
                     </div>
                     <div className="voice-picker-list">
-                      {[...voices]
-                        .sort((a, b) => {
-                          if (a.isPremium === b.isPremium) return a.name.localeCompare(b.name);
-                          return a.isPremium ? -1 : 1;
-                        })
-                        .map(v => (
+                      {filteredVoices.map(v => (
                         <div 
                           key={v.name}
                           className={`voice-picker-item${selectedVoice?.name === v.name ? ' active' : ''}`}
@@ -1371,6 +1384,15 @@ const App: React.FC = () => {
                       >
                         REFRESH
                       </button>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={showAllLanguages} 
+                          onChange={(e) => setShowAllLanguages(e.target.checked)}
+                          style={{ accentColor: 'var(--accent)' }}
+                        />
+                        ALL LANGUAGES
+                      </label>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer' }}>
                         <input 
                           type="checkbox" 
