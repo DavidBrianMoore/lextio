@@ -305,18 +305,33 @@ const App: React.FC = () => {
     for (const file of files) {
       try {
         // Size check for mobile safety
+        logger.info(`Starting import of ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
         if (file.size > 25 * 1024 * 1024) {
           throw new Error('File is too large (max 25MB for mobile stability)');
         }
 
         let parsed: { text: string; cover?: string };
         const name = file.name.toLowerCase();
-        if (name.endsWith('.pdf')) parsed = await parsePDF(file);
-        else if (name.endsWith('.docx')) parsed = await parseDOCX(file);
-        else if (name.endsWith('.epub')) parsed = await parseEPUB(file);
-        else continue;
+        if (name.endsWith('.pdf')) {
+          logger.info('Routing to PDF parser');
+          parsed = await parsePDF(file);
+        } else if (name.endsWith('.docx')) {
+          logger.info('Routing to DOCX parser');
+          parsed = await parseDOCX(file);
+        } else if (name.endsWith('.epub')) {
+          logger.info('Routing to EPUB parser');
+          parsed = await parseEPUB(file);
+        } else {
+          logger.warn(`Unsupported file type: ${file.name}`);
+          continue;
+        }
         
-        if (!parsed.text) continue;
+        if (!parsed.text) {
+          logger.warn(`Parser returned empty text for ${file.name}`);
+          continue;
+        }
+        
+        logger.info(`Successfully parsed ${file.name}, text length: ${parsed.text.length}`);
 
         const entry: LibraryEntry = { 
           id: generateId(), 

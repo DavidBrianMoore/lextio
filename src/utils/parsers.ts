@@ -15,19 +15,23 @@ export interface ParsedDocument {
 }
 
 export const parsePDF = async (file: File): Promise<ParsedDocument> => {
+  logger.info(`parsePDF: reading arrayBuffer for ${file.name}`);
   try {
     const arrayBuffer = await file.arrayBuffer();
+    logger.info(`parsePDF: arrayBuffer loaded (${arrayBuffer.byteLength} bytes). Initializing PDF.js...`);
     const loadingTask = pdfjsLib.getDocument({ 
       data: arrayBuffer,
       useSystemFonts: true,
     });
     
     const pdf = await loadingTask.promise;
+    logger.info(`parsePDF: PDF loaded. Pages: ${pdf.numPages}`);
     // Cap pages on mobile to avoid memory exhaustion
     const maxPages = Math.min(pdf.numPages, 100);
     let fullText = '';
     
     for (let i = 1; i <= maxPages; i++) {
+      if (i % 20 === 0) logger.info(`parsePDF: Processing page ${i}/${maxPages}...`);
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
       const strings = content.items.map((item: any) => {
