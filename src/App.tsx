@@ -710,7 +710,6 @@ const App: React.FC = () => {
   };
 
   const progress = sentences.length > 0 ? ((activeSentenceIndex + 1) / sentences.length) * 100 : 0;
-  const waveHeights = [40, 70, 50, 90, 60, 80, 45, 75, 55, 85, 50, 70, 40, 65];
 
   const currentBook = useMemo(() => 
     Array.isArray(library) ? library.find(b => b.title === fileName) : undefined
