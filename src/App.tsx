@@ -236,13 +236,17 @@ const App: React.FC = () => {
   }, [handleResize, stopResizing]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('voice-reader-library', JSON.stringify(library));
-    } catch (e) {
-      if (e instanceof Error && e.name === 'QuotaExceededError') {
-        console.warn('Storage quota exceeded, could not save library.');
+    if (isFirstRender.current) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('voice-reader-library', JSON.stringify(library));
+      } catch (e) {
+        if (e instanceof Error && e.name === 'QuotaExceededError') {
+          console.warn('Storage quota exceeded, could not save library.');
+        }
       }
-    }
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [library]);
 
   useEffect(() => {

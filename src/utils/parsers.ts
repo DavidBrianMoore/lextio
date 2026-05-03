@@ -56,8 +56,50 @@ export const cleanupText = (text: string): string => {
     return match.replace(/ /g, '');
   });
 
+  // 3. Paragraph Reconstruction & Line Merging (Crucial for PDF extraction)
+  const rawLines = cleaned.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const reconstructed: string[] = [];
+  
+  for (let i = 0; i < rawLines.length; i++) {
+    let current = rawLines[i];
+    
+    while (i + 1 < rawLines.length) {
+      const next = rawLines[i + 1];
+      const lastChar = current[current.length - 1];
+      
+      const isTerminal = /[.!?:"”)]/.test(lastChar);
+      const isHyphen = lastChar === '-';
+      
+      // Heuristic: Is the current line likely a header? (Short and no lowercase letters)
+      const isShort = current.length < 40;
+      const looksLikeHeader = isShort && !/[a-z]/.test(current);
+
+      if (isHyphen) {
+        // Rejoin hyphenated word split across lines
+        current = current.slice(0, -1) + next;
+        i++;
+      } else if (!isTerminal && !looksLikeHeader) {
+        // Merge lines that don't end in terminal punctuation
+        const nextIsList = /^(\d+\.|[•\-\*])/.test(next);
+        const nextIsHeader = next.length < 40 && !/[a-z]/.test(next);
+        
+        if (!nextIsList && !nextIsHeader) {
+          current += ' ' + next;
+          i++;
+        } else {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+    reconstructed.push(current);
+  }
+  
+  cleaned = reconstructed.join('\n\n');
+
   return cleaned
-    // Remove non-printable control characters (often show up as boxes/☒ in PDFs)
+    // Remove non-printable control characters
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/g, '')
     // Fix ligatures split by spaces (fi, fl, ff)
     .replace(/(\w)f\s+i(\w)/g, '$1fi$2')
@@ -67,17 +109,9 @@ export const cleanupText = (text: string): string => {
     .replace(/\bTh\se\b/g, 'The')
     .replace(/\ba\snd\b/g, 'and')
     .replace(/\be\sxempli\s+fi\s+ed\b/g, 'exemplified')
-    // Handle general "f i" pattern at start of words too
     .replace(/\bf\s+i(\w)/g, 'fi$1')
-    // Rejoin words split by line-end hyphens
-    .replace(/(\w)-\s+(\w)/g, '$1$2')
-    // Normalize spaces
+    // Final normalization
     .replace(/[ \t]+/g, ' ')
-    // Normalize newlines
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 };

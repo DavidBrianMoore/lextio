@@ -35,8 +35,8 @@ export const PretextReader: React.FC<PretextReaderProps> = ({
   const [title, ...body] = sentences;
 
   // Windowed rendering to avoid DOM overload. 
-  // We use a larger window (1000) to ensure fast scrolling doesn't "outrun" the text buffer.
-  const WINDOW_SIZE = 1000;
+  // We use a safe window (300) for mobile stability while still allowing some scroll buffer.
+  const WINDOW_SIZE = 300;
   const halfWindow = Math.floor(WINDOW_SIZE / 2);
   
   // Calculate window range around active sentence (offset by 1 because body starts at index 1)
