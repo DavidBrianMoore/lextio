@@ -1158,28 +1158,18 @@ const App: React.FC = () => {
                   <div className="resize-handle" onMouseDown={startResizing} />
                 )}
                 <div className="library-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-                    <div className="nav-logo" onClick={goHome} style={{ cursor: 'pointer', transform: 'scale(0.8)', transformOrigin: 'left center' }} title="Go to Home">
-                      <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
-                      <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
-                      <div className="nav-logo-bar" style={{ height: 26 }} />
-                      <span className="nav-logo-title">LEXTIO</span>
-                      <div className="nav-logo-bar" style={{ height: 26 }} />
-                      <div className="nav-logo-bar" style={{ height: 18, opacity: 0.6 }} />
-                      <div className="nav-logo-bar" style={{ height: 12, opacity: 0.35 }} />
-                    </div>
-                    <div className="v-divider" />
-                    <h2 className="library-title" style={{ margin: 0 }}>
-                      <Library size={18} style={{ color: 'var(--accent)' }} /> Library
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                    <h2 className="library-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Library size={22} style={{ color: 'var(--accent)' }} /> LIBRARY
                     </h2>
                     <button 
                       className={`select-all-btn ${selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? 'active' : ''}`}
                       onClick={selectAll}
                       title="Select All"
-                      style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}
+                      style={{ height: '24px', padding: '0 8px', fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                     >
                       {selectedIds.size === filteredLibrary.length && filteredLibrary.length > 0 ? <CheckSquare size={12} /> : <Square size={12} />}
-                      Select All
+                      ALL
                     </button>
                   </div>
                   <div className="library-controls">
