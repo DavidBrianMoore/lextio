@@ -123,6 +123,7 @@ export const useVoice = () => {
   const stop = useCallback(() => {
     isManualStop.current = true;
     synth.cancel();
+    utteranceRef.current = null;
     setIsPlaying(false);
   }, [synth]);
 
@@ -130,6 +131,7 @@ export const useVoice = () => {
     // Prevent the previous utterance's onend from triggering auto-progression
     isManualStop.current = true;
     synth.cancel();
+    utteranceRef.current = null;
     
     // Now prepare the new utterance
     isManualStop.current = false;
@@ -154,13 +156,13 @@ export const useVoice = () => {
     
     utterance.onstart = () => setIsPlaying(true);
     utterance.onend = () => {
-      if (!isManualStop.current) {
+      if (!isManualStop.current && utteranceRef.current === utterance) {
         setIsPlaying(false);
         onEnd?.();
       }
     };
     utterance.onerror = (event) => {
-      if (event.error === 'interrupted' || isManualStop.current) return;
+      if (event.error === 'interrupted' || isManualStop.current || utteranceRef.current !== utterance) return;
       console.error('SpeechSynthesisError', event);
       setIsPlaying(false);
       onEnd?.();
@@ -179,6 +181,7 @@ export const useVoice = () => {
   const pause = useCallback(() => {
     isManualStop.current = true;
     synth.cancel();
+    utteranceRef.current = null;
     setIsPlaying(false);
   }, [synth]);
 

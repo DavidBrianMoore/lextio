@@ -850,8 +850,15 @@ const App: React.FC = () => {
   }, [sentences, speak, stop]);
 
   const handleSpeak = () => {
-    if (isPlaying) pause();
-    else playFromIndex(activeSentenceIndex >= 0 ? activeSentenceIndex : 0);
+    if (isPlaying) {
+      pause();
+    } else {
+      // Ensure we always have a valid index to resume from, defaulting to start if needed
+      const target = (activeSentenceIndex >= 0 && activeSentenceIndex < sentences.length) 
+        ? activeSentenceIndex 
+        : 0;
+      playFromIndex(target);
+    }
   };
 
   const toggleBookmark = () => {
