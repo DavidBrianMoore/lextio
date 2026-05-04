@@ -424,39 +424,6 @@ const App: React.FC = () => {
       selectAll
     });
   }, [library, setLibrary]); 
-
-  // Preview voice/speed when paused; restart when playing
-  useEffect(() => {
-    if (isFirstRender.current) { 
-      isFirstRender.current = false; 
-      lastRate.current = rate;
-      lastVoiceName.current = selectedVoice?.name;
-      return; 
-    }
-    
-    const rateChanged = Math.abs(lastRate.current - rate) > 0.01;
-    const voiceChanged = lastVoiceName.current !== selectedVoice?.name;
-    
-    // Only proceed if something actually changed
-    if (!rateChanged && !voiceChanged) return;
-    
-    lastRate.current = rate;
-    lastVoiceName.current = selectedVoice?.name;
-
-    if (isPlaying && activeSentenceIndex >= 0) {
-      const t = setTimeout(() => {
-        // Double check that we are STILL playing after the debounce delay
-        if (isPlaying) {
-          playFromIndex(activeSentenceIndex);
-        }
-      }, 250);
-      return () => clearTimeout(t);
-    } else if (!isPlaying && content) {
-      preview();
-    }
-  }, [rate, selectedVoice, isPlaying, activeSentenceIndex, content, playFromIndex, preview]);
-
-
   // Split content into sentences
   const sentences = useMemo(() => {
     try {
@@ -491,7 +458,63 @@ const App: React.FC = () => {
       return [content || ''];
     }
   }, [content, fileName]);
-  
+
+  const playFromIndex = useCallback((index: number) => {
+    if (index >= sentences.length) { stop(); return; }
+    setActiveSentenceIndex(index);
+    speak(sentences[index], () => {
+      // Logic handled in PretextReader via scrollMode prop
+    }, () => {
+      if (index + 1 < sentences.length) playFromIndex(index + 1);
+      else stop();
+    });
+  }, [sentences, speak, stop]);
+
+  const handleSpeak = () => {
+    if (isPlaying) {
+      pause();
+    } else {
+      // Ensure we always have a valid index to resume from, defaulting to start if needed
+      const target = (activeSentenceIndex >= 0 && activeSentenceIndex < sentences.length) 
+        ? activeSentenceIndex 
+        : 0;
+      playFromIndex(target);
+    }
+  };
+
+  // Preview voice/speed when paused; restart when playing
+  useEffect(() => {
+    if (isFirstRender.current) { 
+      isFirstRender.current = false; 
+      lastRate.current = rate;
+      lastVoiceName.current = selectedVoice?.name;
+      return; 
+    }
+    
+    const rateChanged = Math.abs(lastRate.current - rate) > 0.01;
+    const voiceChanged = selectedVoice?.name && lastVoiceName.current !== undefined && lastVoiceName.current !== selectedVoice.name;
+    
+    // Only proceed if something actually changed
+    if (!rateChanged && !voiceChanged) return;
+    
+    lastRate.current = rate;
+    lastVoiceName.current = selectedVoice?.name;
+
+    if (isPlaying && activeSentenceIndex >= 0) {
+      const t = setTimeout(() => {
+        // Double check that we are STILL playing after the debounce delay
+        if (isPlaying) {
+          playFromIndex(activeSentenceIndex);
+        }
+      }, 250);
+      return () => clearTimeout(t);
+    } else if (!isPlaying && content && rateChanged) {
+      // Only preview if the RATE changed (deliberate user action usually)
+      // Voice changes during initialization shouldn't trigger this anymore due to the voiceChanged check
+      preview();
+    }
+  }, [rate, selectedVoice, isPlaying, activeSentenceIndex, content, playFromIndex, preview]);
+
   // Chapter detection
   const chapters = useMemo(() => {
     const list: { title: string, index: number }[] = [];
@@ -840,29 +863,6 @@ const App: React.FC = () => {
     const files = Array.from(e.dataTransfer.files || []);
     if (files.length > 0) {
       handleFileUpload({ target: { files: e.dataTransfer.files } } as any);
-    }
-  };
-
-  const playFromIndex = useCallback((index: number) => {
-    if (index >= sentences.length) { stop(); return; }
-    setActiveSentenceIndex(index);
-    speak(sentences[index], () => {
-      // Logic handled in PretextReader via scrollMode prop
-    }, () => {
-      if (index + 1 < sentences.length) playFromIndex(index + 1);
-      else stop();
-    });
-  }, [sentences, speak, stop]);
-
-  const handleSpeak = () => {
-    if (isPlaying) {
-      pause();
-    } else {
-      // Ensure we always have a valid index to resume from, defaulting to start if needed
-      const target = (activeSentenceIndex >= 0 && activeSentenceIndex < sentences.length) 
-        ? activeSentenceIndex 
-        : 0;
-      playFromIndex(target);
     }
   };
 
