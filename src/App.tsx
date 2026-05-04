@@ -444,12 +444,17 @@ const App: React.FC = () => {
     lastVoiceName.current = selectedVoice?.name;
 
     if (isPlaying && activeSentenceIndex >= 0) {
-      const t = setTimeout(() => playFromIndex(activeSentenceIndex), 250);
+      const t = setTimeout(() => {
+        // Double check that we are STILL playing after the debounce delay
+        if (isPlaying) {
+          playFromIndex(activeSentenceIndex);
+        }
+      }, 250);
       return () => clearTimeout(t);
     } else if (!isPlaying && content) {
       preview();
     }
-  }, [rate, selectedVoice]); // eslint-disable-line
+  }, [rate, selectedVoice, isPlaying, activeSentenceIndex, content, playFromIndex, preview]);
 
 
   // Split content into sentences
