@@ -501,13 +501,8 @@ const App: React.FC = () => {
     lastVoiceName.current = selectedVoice?.name;
 
     if (isPlaying && activeSentenceIndex >= 0) {
-      const t = setTimeout(() => {
-        // Double check that we are STILL playing after the debounce delay
-        if (isPlaying) {
-          playFromIndex(activeSentenceIndex);
-        }
-      }, 250);
-      return () => clearTimeout(t);
+      // Immediately restart at the current sentence with the new rate/voice
+      playFromIndex(activeSentenceIndex);
     } else if (!isPlaying && content && rateChanged) {
       // Only preview if the RATE changed (deliberate user action usually)
       // Voice changes during initialization shouldn't trigger this anymore due to the voiceChanged check
