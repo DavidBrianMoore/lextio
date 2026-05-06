@@ -4,11 +4,11 @@ import {
   Settings, Volume2, SkipBack, SkipForward, Play, Pause, X, Globe, ChevronDown,
   LayoutGrid, List, AlignJustify, Maximize2, Minimize2, FolderPlus, Folder as FolderIcon,
   RotateCcw, FastForward, Bookmark, History, Shuffle, ClipboardCheck,
-  SortAsc
+  SortAsc, Clipboard
 } from 'lucide-react';
 import { logger } from './utils/logger';
 import { useVoice } from './hooks/useVoice';
-import { parsePDF, parseDOCX, parseEPUB } from './utils/parsers';
+import { parsePDF, parseDOCX, parseEPUB, cleanupText } from './utils/parsers';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PretextReader } from './components/PretextReader';
 import { initDebugApi } from './utils/debugApi';
@@ -570,6 +570,56 @@ const App: React.FC = () => {
       }
     } catch (e) {}
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  };
+
+  const handlePasteText = async () => {
+    try {
+      let text = '';
+      try {
+        // Try to read from clipboard first
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          text = await navigator.clipboard.readText();
+        }
+      } catch (e) {
+        logger.warn('Clipboard read failed, falling back to prompt', e);
+      }
+
+      // Fallback to prompt if clipboard is empty or restricted
+      if (!text) {
+        text = prompt('Paste your text here:') || '';
+      }
+
+      if (!text.trim()) return;
+
+      const title = prompt('Enter a title for this text:', `Pasted Text ${new Date().toLocaleTimeString()}`) || `Pasted Text ${new Date().toLocaleTimeString()}`;
+      
+      const cleaned = cleanupText(text);
+      
+      const entry: LibraryEntry = {
+        id: generateId(),
+        title: title,
+        content: cleaned,
+        timestamp: Date.now(),
+        folderId: selectedFolderId !== 'all' && selectedFolderId !== 'uncategorized' ? selectedFolderId : undefined
+      };
+
+      setLibrary(prev => {
+        const updated = [entry, ...prev.filter(i => i.title !== title)].slice(0, 50);
+        localStorage.setItem('voice-reader-library', JSON.stringify(updated));
+        return updated;
+      });
+
+      // Switch to the new content
+      stop();
+      setFileName(title);
+      setContent(cleaned);
+      setActiveSentenceIndex(-1);
+      setShowLibrary(false);
+      setNotification({ message: `Added pasted text as "${title}"`, type: 'success' });
+    } catch (err) {
+      logger.error('Failed to handle pasted text:', err);
+      setNotification({ message: 'Failed to process pasted text', type: 'error' });
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1313,6 +1363,13 @@ const App: React.FC = () => {
                       title="Import from URL"
                     >
                       <Globe size={18} />
+                    </button>
+                    <button 
+                      className="control-icon-btn highlight" 
+                      onClick={handlePasteText}
+                      title="Paste Text"
+                    >
+                      <Clipboard size={18} />
                     </button>
                     <div className="v-divider" />
                     <button 
