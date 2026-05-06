@@ -437,7 +437,7 @@ const App: React.FC = () => {
         if (trimmed) {
           // Compatible splitting: use a delimiter then clean up
           const parts = trimmed
-            .replace(/([.!?])\s+/g, "$1|")
+              .replace(/(\s*[.!?]["'”’\)\]*]*)[\s\n]+/g, "$1|")
             .split("|")
             .filter(s => s.trim().length > 0);
             

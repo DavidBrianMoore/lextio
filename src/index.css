@@ -206,8 +206,7 @@ body {
   font-family: 'Outfit', sans-serif;
   font-size: clamp(1.4rem, 2.5vw, 2.2rem);
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
   text-align: center;
   color: var(--text-primary);
 }
