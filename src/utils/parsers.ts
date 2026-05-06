@@ -18,7 +18,7 @@ export interface ParsedDocument {
  * Clean up text artifacts from PDF/EPUB extraction
  * (Ligatures, split words, weird spacing, and Caesar-shifted PDF gibberish)
  */
-export const cleanupText = (text: string): string => {
+export const cleanupText = (text: string, skipRepair = false): string => {
   // 1. Caesar Shift Repair & Ligature Fix
   const REPAIR_WORDS = new Set([
     'the', 'and', 'with', 'that', 'this', 'for', 'from', 'have', 'been', 'which',
@@ -48,12 +48,12 @@ export const cleanupText = (text: string): string => {
   };
 
   const isGibberish = (word: string): boolean => {
-    const clean = word.trim();
+    const clean = word.trim().replace(/[.,!?;:()]/g, '');
     if (clean.length < 2) return false;
     // Mostly uppercase words with PDF-shifted punctuation are highly suspicious
     if (/^[A-Z\\\[\]\^¿¬]+$/.test(clean)) return true;
-    // Words with extremely low vowel counts or weird character mixes
-    const vowels = clean.match(/[aeiou]/gi);
+    // Words with extremely low vowel counts (including y)
+    const vowels = clean.match(/[aeiouy]/gi);
     if (clean.length > 4 && (!vowels || vowels.length / clean.length < 0.15)) return true;
     return false;
   };
@@ -67,8 +67,8 @@ export const cleanupText = (text: string): string => {
       const clean = part.trim();
       if (!clean) return part;
 
-      // Always try -3 shift for suspicious or all-caps words
-      if (isGibberish(part) || clean === 'D' || /^[A-Z]{2,}$/.test(clean)) {
+      // Always try -3 shift for suspicious or all-caps words (unless skipped)
+      if (!skipRepair && (isGibberish(part) || clean === 'D' || /^[A-Z]{2,}$/.test(clean))) {
         const shifted = caesarShift(part, -3);
         const lowerShifted = shifted.toLowerCase();
         const vowels = shifted.match(/[aeiou]/gi);

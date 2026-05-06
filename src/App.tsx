@@ -593,7 +593,7 @@ const App: React.FC = () => {
 
       const title = prompt('Enter a title for this text:', `Pasted Text ${new Date().toLocaleTimeString()}`) || `Pasted Text ${new Date().toLocaleTimeString()}`;
       
-      const cleaned = cleanupText(text);
+      const cleaned = cleanupText(text, true);
       
       const entry: LibraryEntry = {
         id: generateId(),
