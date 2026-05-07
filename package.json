@@ -1,7 +1,7 @@
 {
   "name": "voice-reader",
   "private": true,
-  "version": "1.0.94",
+  "version": "1.0.95",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,8 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "npm run build && firebase deploy --only hosting",
-    "push": "npm version patch --no-git-tag-version && git add . && git commit -m \"Version bump\" && git push origin main && npm run deploy",
-    "push-deploy": "npm run push"
+    "push": "node scripts/push.js",
+    "release": "node scripts/push.js",
+    "push-deploy": "node scripts/push.js"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.4",
