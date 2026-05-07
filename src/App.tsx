@@ -961,6 +961,7 @@ const App: React.FC = () => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onClick={() => { if (focusMode) setFocusMode(false); }}
     >
       <AnimatePresence>
         {isDragging && (
@@ -1014,7 +1015,6 @@ const App: React.FC = () => {
       {/* ── Main Reader ── */}
       <main 
         className="reader-container"
-        onClick={() => setFocusMode(prev => !prev)}
       >
         {content ? (
           <div className="animate-fade-in">
@@ -1267,7 +1267,7 @@ const App: React.FC = () => {
                 </div>
               <button 
                 className={`btn-icon-small${focusMode ? ' active' : ''}`} 
-                onClick={() => setFocusMode(!focusMode)}
+                onClick={(e) => { e.stopPropagation(); setFocusMode(!focusMode); }}
                 title="Zen Focus Mode"
               >
                 <Shuffle size={14} />
